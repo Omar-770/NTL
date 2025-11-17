@@ -23,6 +23,7 @@ int main(int argc, char* argv[])
 	NTL::NTL_opt opt(setup);
 	NTL::NTL ntl;
 
+
 	try
 	{
 		ntl = opt.optimise(ntl, NTL::console::inactive);
