@@ -21,11 +21,12 @@ namespace NTL
 
 		void merge(const char* title = "NTL_sim");
 
-		void z_profile(double step_size = 1e-4);
-		void w_h_profile(double step_size = 1e-4);
-		void s_matrix(double Zs, double Zl);
+		void z_profile(const char* title = "Impedance Z(z)", double step_size = 1e-4);
+		void w_h_profile(const char* title = "W/H(z)", double step_size = 1e-4);
+		void s_matrix(double Zs, double Zl, const char* title = "");
 
-
+		std::vector<QMainWindow*> get_windows() const { return m_windows; }
+		
 	private:
 		NTL m_ntl;
 		double m_fmin;

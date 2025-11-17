@@ -1,5 +1,5 @@
 #include "NTL_sim.h"
-
+#include <string>
 namespace NTL
 {
 	void NTL_sim::merge(const char* title)
@@ -7,20 +7,20 @@ namespace NTL
 		m_plotter.combine(m_windows, title);
 	}
 
-	void NTL_sim::z_profile(double step_size)
+	void NTL_sim::z_profile(const char* title, double step_size)
 	{
 		auto z_vec = m_ntl.get_Z_vec(step_size);
-		m_windows.push_back(m_plotter.plot(z_vec, "Impedance Z(z)"));
+		m_windows.push_back(m_plotter.plot(z_vec, title));
 	}
 
-	void NTL_sim::w_h_profile(double step_size)
+	void NTL_sim::w_h_profile(const char* title, double step_size)
 	{
 		auto w_h_vec = m_ntl.get_w_h_vec(step_size);
 
-		m_windows.push_back(m_plotter.plot_mirror(w_h_vec, "W/H(z)"));
+		m_windows.push_back(m_plotter.plot_mirror(w_h_vec, title));
 	}
 
-	void NTL_sim::s_matrix(double Zs, double Zl)
+	void NTL_sim::s_matrix(double Zs, double Zl, const char* title)
 	{
 		std::vector<std::pair<double, double>> S11, S12, S21, S22;
 		
@@ -40,9 +40,9 @@ namespace NTL
 			S22.emplace_back(f, 20 * std::log10(std::abs(S_matrix(1, 1))));
 		}
 
-		m_windows.push_back(m_plotter.plot(S11, "S11"));
-		m_windows.push_back(m_plotter.plot(S12, "S12"));
-		m_windows.push_back(m_plotter.plot(S21, "S21"));
-		m_windows.push_back(m_plotter.plot(S22, "S22"));
+		m_windows.push_back(m_plotter.plot(S11, ("S11" + std::string(title)).c_str()));
+		m_windows.push_back(m_plotter.plot(S12, ("S12" + std::string(title)).c_str()));
+		m_windows.push_back(m_plotter.plot(S21, ("S21" + std::string(title)).c_str()));
+		m_windows.push_back(m_plotter.plot(S22, ("S22" + std::string(title)).c_str()));
 	}
 }
