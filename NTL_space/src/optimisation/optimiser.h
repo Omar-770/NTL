@@ -28,8 +28,8 @@ namespace NTL
 	{
 	public:
 		opt(const opt_setup& setup)
-			: m_N(setup.N), m_lb(setup.lb), m_ub(setup.ub), m_toll_bounds(setup.toll_bounds), m_toll_z(setup.toll_z),
-			m_GBL_MAX(setup.GBL_MAX), m_LCL_MAX(setup.LCL_MAX), m_accepted_error(setup.accepted_error), m_max_attempts(setup.max_attempts)
+			: m_N(setup.N), m_lb(setup.lb), m_ub(setup.ub), m_toll_bounds(setup.toll_bounds),
+			m_toll_z(setup.toll_z), m_max_attempts(setup.max_attempts)
 		{
 
 		}
