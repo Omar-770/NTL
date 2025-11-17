@@ -23,12 +23,14 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		opt.optimise(ntl, true);
+		opt.optimise(ntl);
 	}
 	catch (std::invalid_argument& e)
 	{
 		std::cout << e.what();
 	}
+
+	std::cout << "Result:\t" << ntl.get_Cn() << std::endl;
 
 	return 0;
 }

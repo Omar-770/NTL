@@ -3,18 +3,19 @@
 
 namespace NTL
 {
-	std::vector<double> opt::optimiser(bool output)
+	std::vector<double> opt::optimiser(console mode)
 	{
 		if (m_N == 0 || m_lb.empty() || m_ub.empty() || m_toll_bounds.empty() || m_toll_z.empty())
 			throw(std::invalid_argument("Incomplete optimisation setup"));
 
+		bool output = (mode == console::active) ? true : false;
 
 		double overall_best_error = std::numeric_limits<double>::max();
 		std::vector<double> overall_best_Cn(m_N);
 		int attempt = 1;
 
 
-		while (true)
+		while (attempt <= m_max_attempts)
 		{
 			if(output)
 			{

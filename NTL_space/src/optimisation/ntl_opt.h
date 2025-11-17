@@ -4,6 +4,10 @@
 
 namespace NTL
 {
+	class NTL_opt;
+	struct NTL_opt_setup;
+
+
 	struct NTL_opt_setup : public opt_setup
 	{
 		double Z0{ 0 };
@@ -28,8 +32,8 @@ namespace NTL
 
 		}
 
-		NTL optimise(bool output = false);
-		NTL optimise(NTL& ntl, bool output = false);
+		NTL optimise(console mode = console::inactive);
+		NTL optimise(NTL& ntl, console mode = console::inactive);
 
 	private:
 		double m_Z0;

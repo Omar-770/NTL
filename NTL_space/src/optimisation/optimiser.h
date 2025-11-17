@@ -10,6 +10,7 @@ namespace NTL
 {
 	class opt;
 	struct opt_setup;
+	enum class console;
 
 	struct opt_setup
 	{
@@ -21,6 +22,12 @@ namespace NTL
 		double GBL_MAX{ 0 };
 		double LCL_MAX{ 0 };
 		double accepted_error{ 0 };
+		int max_attempts{ 10'000 };
+	};
+
+	enum class console
+	{
+		active = true, inactive = false
 	};
 
 	class opt
@@ -28,13 +35,14 @@ namespace NTL
 	public:
 		opt(const opt_setup& setup)
 			: m_N(setup.N), m_lb(setup.lb), m_ub(setup.ub), m_toll_bounds(setup.toll_bounds),
-			m_toll_z(setup.toll_z), m_GBL_MAX(setup.GBL_MAX), m_LCL_MAX(setup.LCL_MAX), m_accepted_error(setup.accepted_error)
+			m_toll_z(setup.toll_z), m_GBL_MAX(setup.GBL_MAX), m_LCL_MAX(setup.LCL_MAX), m_accepted_error(setup.accepted_error),
+			m_max_attempts(setup.max_attempts)
 		{
 
 		}
 
 	protected:
-		std::vector<double> optimiser(bool output = false);
+		std::vector<double> optimiser(console mode = console::inactive);
 
 	private:
 		int m_N;
@@ -45,6 +53,7 @@ namespace NTL
 		double m_GBL_MAX;
 		double m_LCL_MAX;
 		double m_accepted_error;
+		int m_max_attempts;
 
 
 	private:

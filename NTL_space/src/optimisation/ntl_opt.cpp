@@ -2,7 +2,7 @@
 
 namespace NTL
 {
-	NTL NTL_opt::optimise(bool output)
+	NTL NTL_opt::optimise(console mode)
 	{
 		if (m_Z0 == 0 || m_er == 0 || m_d == 0)
 			throw(std::invalid_argument("Invalid NTL physical charachteristics"));
@@ -15,13 +15,13 @@ namespace NTL
 
 
 		NTL ntl(m_Z0, m_er, m_d);
-		std::vector<double> cn = optimiser(output);
+		std::vector<double> cn = optimiser(mode);
 		ntl.set_Cn(cn);
 		
 		return ntl;
 	}
 
-	NTL NTL_opt::optimise(NTL& ntl, bool output)
+	NTL NTL_opt::optimise(NTL& ntl, console mode)
 	{
 		if (m_Z0 == 0 || m_er == 0 || m_d == 0)
 			throw(std::invalid_argument("Invalid NTL physical charachteristics"));
@@ -32,7 +32,7 @@ namespace NTL
 		if (m_Z_min == 0 || m_Z_max == 0 || m_Z_max < m_Z_min)
 			throw(std::invalid_argument("Invalid min/max impedance(s)"));
 
-		std::vector<double> cn = optimiser(output);
+		std::vector<double> cn = optimiser(mode);
 	
 		ntl.set_Z0(m_Z0);
 		ntl.set_er(m_er);
