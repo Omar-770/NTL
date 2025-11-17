@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
 	setup.N = 10; setup.K = 50; setup.lb = std::vector<double>(setup.N, -1);  setup.ub = std::vector<double>(setup.N, 1);
 	setup.toll_bounds = std::vector<double>(2, 1e-6); setup.toll_z = std::vector<double>(setup.K, 1e-6);
 	setup.GBL_MAX = 350e3; setup.LCL_MAX = 50e3; setup.accepted_error = 6e-3;
-	setup.m_Z_min = 0.1 * setup.Z0; setup.m_Z_max = 2.6 * setup.Z0; setup.max_attempts = 100;
+	setup.m_Z_min = 0.1 * setup.Z0; setup.m_Z_max = 2.6 * setup.Z0;
 
 	NTL::NTL_opt opt(setup);
 	NTL::NTL ntl;

@@ -14,7 +14,7 @@ namespace NTL
 		int attempt = 1;
 
 
-		while (attempt < m_max_attempts)
+		while (true)
 		{
 			if(output)
 			{
