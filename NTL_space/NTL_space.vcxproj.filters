@@ -21,7 +21,10 @@
     <ClCompile Include="src\models\ntl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\optimisation\ntl_opt.cpp">
+    <ClCompile Include="src\optimisation\optimiser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\optimisation\NTL_opt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,10 +35,13 @@
     <ClInclude Include="src\simulation\test.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\optimisation\ntl_opt.h">
+    <ClInclude Include="src\optimisation\optimiser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\common\helpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\optimisation\NTL_opt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
