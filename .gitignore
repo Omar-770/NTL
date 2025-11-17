@@ -1,0 +1,29 @@
+# ----------------------------------------------------------------
+# 1. VISUAL STUDIO / C# / C++
+# ----------------------------------------------------------------
+## Covers .vs, .user, .suo files, and all build output folders
+**/[Bb]in/
+**/[Oo]bj/
+**/[Rr]elease/
+**/[Dd]ebug/
+.vs/
+*.user
+*.suo
+
+# ----------------------------------------------------------------
+# 2. PYTHON ENVIRONMENT
+# ----------------------------------------------------------------
+## Common virtual environment folder names
+venv/
+.venv/
+env/
+
+## Python cache and compiled files
+__pycache__/
+*.pyc
+
+# ----------------------------------------------------------------
+# 3. YOUR SPECIFIC FOLDER
+# ----------------------------------------------------------------
+## Replace 'MyFolderToIgnore/' with the actual name of your folder
+dir/

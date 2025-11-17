@@ -1,0 +1,9 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="NTL_space/NTL_space.vcxproj" Id="c780dc74-4122-40e6-9db7-df4e4d88f224">
+    <Build Solution="*|x86" Project="false" />
+  </Project>
+</Solution>
