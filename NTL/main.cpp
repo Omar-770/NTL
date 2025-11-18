@@ -27,23 +27,25 @@ int main(int argc, char* argv[])
 	try
 	{
 		ntl = opt.optimise(ntl, NTL::console::inactive);
+
+
+		std::cout << "Result:\t" << ntl.get_Cn() << std::endl;
+
+		NTL::NTL_sim sim(ntl);
+		sim.set_f_sweep(1, 2e9);
+		sim.z_profile();
+		sim.w_h_profile();
+		sim.s_matrix(11, setup.Zs, setup.Zl);
+		sim.s_matrix(12, setup.Zs, setup.Zl);
+
+		sim.merge("NTL (1)");
+
+		app.exec();
 	}
 	catch (std::invalid_argument& e)
 	{
 		std::cout << e.what();
 	}
-
-	std::cout << "Result:\t" << ntl.get_Cn() << std::endl;
-
-	NTL::NTL_sim sim(ntl);
-	sim.set_f_sweep(1, 2e9);
-	sim.z_profile();
-	sim.w_h_profile();
-	sim.s_matrix(setup.Zs, setup.Zl);
-
-	sim.merge("NTL (1)");
-
-	app.exec();
 
 	return 0;
 }

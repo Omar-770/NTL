@@ -22,6 +22,9 @@ namespace NTL
 
 	void NTL_sim::s_matrix(double Zs, double Zl, const char* title)
 	{
+		if (Zs < 0 || Zl < 0 || 0 < Zs < 1e-6 || 0 < Zl < 1e-6)
+			throw(std::invalid_argument("Invalid terminsl impedances, S_matrix simulation" + std::string(title)));
+
 		std::vector<std::pair<double, double>> S11, S12, S21, S22;
 		
 		double points = (m_fmax - m_fmin) / m_fstep + 1;
@@ -44,5 +47,33 @@ namespace NTL
 		m_windows.push_back(m_plotter.plot(S12, ("S12" + std::string(title)).c_str()));
 		m_windows.push_back(m_plotter.plot(S21, ("S21" + std::string(title)).c_str()));
 		m_windows.push_back(m_plotter.plot(S22, ("S22" + std::string(title)).c_str()));
+	}
+
+	void NTL_sim::s_matrix(int index, double Zs, double Zl, const char* title)
+	{
+		if (Zs < 0 || Zl < 0 || 0 < Zs < 1e-6 || 0 < Zl < 1e-6)
+			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation" + std::string(title)));
+
+		int first_index = index / 10;
+		int second_index = index % 10;
+
+		if (first_index < 1 || first_index > 2 ||
+			second_index < 1 || second_index > 2)
+			throw(std::invalid_argument("Invalid indices, S_matrix simulation " + std::string(title)));
+
+		std::vector<std::pair<double, double>> S;
+		
+		double points = (m_fmax - m_fmin) / m_fstep + 1;
+		S.reserve(points);
+
+		for (double f = m_fmin; f < m_fmax; f += m_fstep)
+		{
+			matrix2x2cd S_matrix = m_ntl.S_matrix(f, Zs, Zl);
+
+			S.emplace_back(f, 20 * std::log10(std::abs(S_matrix(first_index - 1, second_index - 1))));
+		}
+
+		m_windows.push_back(m_plotter.plot(S, ("S" + std::to_string(index) + std::string(title)).c_str()));
+
 	}
 }

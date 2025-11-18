@@ -23,7 +23,9 @@ namespace NTL
 
 		void z_profile(const char* title = "Impedance Z(z)", double step_size = 1e-4);
 		void w_h_profile(const char* title = "W/H(z)", double step_size = 1e-4);
+
 		void s_matrix(double Zs, double Zl, const char* title = "");
+		void s_matrix(int index, double Zs, double Zl, const char* title = "");
 
 		std::vector<QMainWindow*> get_windows() const { return m_windows; }
 		
