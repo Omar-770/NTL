@@ -17,7 +17,7 @@ namespace NTL
 
 		while (attempt <= m_max_attempts)
 		{
-			if(output)
+			if (output)
 			{
 				std::cout << "\n============================================================" << std::endl;
 				std::cout << "               STARTING OPTIMIZATION ATTEMPT #" << attempt << std::endl;
@@ -29,7 +29,7 @@ namespace NTL
 			double global_minf, final_minf_this_attempt;
 
 			// --- 1. GLOBAL SEARCH PHASE ---
-			if(output)
+			if (output)
 				std::cout << "--- Starting Global Search Phase (using GN_ISRES) ---" << std::endl;
 			nlopt::opt global_optimizer(nlopt::GN_ISRES, m_N);
 			global_optimizer.set_lower_bounds(m_lb);
@@ -64,51 +64,63 @@ namespace NTL
 				continue;
 			}
 
-			// --- 2. LOCAL REFINEMENT PHASE ---
-			if (output)
-				std::cout << "\n--- Starting Local Refinement Phase (using LD_MMA) ---" << std::endl;
-			nlopt::opt local_optimizer(nlopt::LD_AUGLAG, m_N);
-			//nlopt::opt local_optimizer(nlopt::LN_COBYLA, N);
-			local_optimizer.set_lower_bounds(m_lb);
-			local_optimizer.set_upper_bounds(m_ub);
-
-
-			nlopt::opt inner_optimizer(nlopt::LD_MMA, m_N);
-			inner_optimizer.set_ftol_rel(1e-7);
-			inner_optimizer.set_xtol_rel(1e-7);
-
-			local_optimizer.set_local_optimizer(inner_optimizer);
-			local_optimizer.set_min_objective([](const std::vector<double>& Cn, std::vector<double>& grad, void* data) -> double {
-				return (static_cast<opt*>(data))->objective_with_fd_gradient(Cn, grad, data);
-				}, this);
-			local_optimizer.add_equality_mconstraint([](unsigned m, double* res, unsigned n, const double* x, double* grad, void* data) {
-				(*static_cast<opt*>(data)).equality_constraints(m, res, n, x);
-				}, this, m_toll_bounds);
-			local_optimizer.add_inequality_mconstraint([](unsigned m, double* res, unsigned n, const double* Cn, double*, void* data) {
-				(*static_cast<opt*>(data)).inequality_constraints_Zmax(m, res, n, Cn);
-				}, this, m_toll_z);
-			local_optimizer.add_inequality_mconstraint([](unsigned m, double* res, unsigned n, const double* Cn, double*, void* data) {
-				(*static_cast<opt*>(data)).inequality_constraints_Zmin(m, res, n, Cn);
-				}, this, m_toll_z);
-
-			local_optimizer.set_ftol_rel(1e-7);
-			local_optimizer.set_xtol_rel(1e-7);
-			local_optimizer.set_maxeval(m_LCL_MAX);
-
-			best_Cn_this_attempt = Cn_this_attempt;
-
-			try
+			if (global_minf > m_accepted_error)
 			{
-				local_optimizer.optimize(best_Cn_this_attempt, final_minf_this_attempt);
+				// --- 2. LOCAL REFINEMENT PHASE ---
 				if (output)
-					std::cout << "Local refinement finished. Error for this attempt: " << final_minf_this_attempt << std::endl;
+					std::cout << "\n--- Starting Local Refinement Phase (using LD_MMA) ---" << std::endl;
+				nlopt::opt local_optimizer(nlopt::LD_AUGLAG, m_N);
+				//nlopt::opt local_optimizer(nlopt::LN_COBYLA, N);
+				local_optimizer.set_lower_bounds(m_lb);
+				local_optimizer.set_upper_bounds(m_ub);
+
+
+				nlopt::opt inner_optimizer(nlopt::LD_MMA, m_N);
+				inner_optimizer.set_ftol_rel(1e-7);
+				inner_optimizer.set_xtol_rel(1e-7);
+
+				local_optimizer.set_local_optimizer(inner_optimizer);
+				local_optimizer.set_min_objective([](const std::vector<double>& Cn, std::vector<double>& grad, void* data) -> double {
+					return (static_cast<opt*>(data))->objective_with_fd_gradient(Cn, grad, data);
+					}, this);
+				local_optimizer.add_equality_mconstraint([](unsigned m, double* res, unsigned n, const double* x, double* grad, void* data) {
+					(*static_cast<opt*>(data)).equality_constraints(m, res, n, x);
+					}, this, m_toll_bounds);
+				local_optimizer.add_inequality_mconstraint([](unsigned m, double* res, unsigned n, const double* Cn, double*, void* data) {
+					(*static_cast<opt*>(data)).inequality_constraints_Zmax(m, res, n, Cn);
+					}, this, m_toll_z);
+				local_optimizer.add_inequality_mconstraint([](unsigned m, double* res, unsigned n, const double* Cn, double*, void* data) {
+					(*static_cast<opt*>(data)).inequality_constraints_Zmin(m, res, n, Cn);
+					}, this, m_toll_z);
+
+				local_optimizer.set_ftol_rel(1e-7);
+				local_optimizer.set_xtol_rel(1e-7);
+				local_optimizer.set_maxeval(m_LCL_MAX);
+
+				best_Cn_this_attempt = Cn_this_attempt;
+
+				try
+				{
+					local_optimizer.optimize(best_Cn_this_attempt, final_minf_this_attempt);
+					if (output)
+						std::cout << "Local refinement finished. Error for this attempt: " << final_minf_this_attempt << std::endl;
+				}
+				catch (const std::exception& ex)
+				{
+					std::cerr << "Local optimizer failed on attempt #" << attempt << ": " << ex.what() << std::endl;
+					attempt++;
+					continue;
+				}
+
 			}
-			catch (const std::exception& ex)
+			else
 			{
-				std::cerr << "Local optimizer failed on attempt #" << attempt << ": " << ex.what() << std::endl;
-				attempt++;
-				continue;
+				if(output)
+					std::cout << "Skipping Local Refinement Phase..." << std::endl;
+				best_Cn_this_attempt = Cn_this_attempt;
+				final_minf_this_attempt = global_minf;
 			}
+
 
 
 			if (final_minf_this_attempt < overall_best_error)
@@ -129,7 +141,7 @@ namespace NTL
 			{
 				if (output)
 					std::cout << "\nSUCCESS: Solution found with error " << final_minf_this_attempt
-						<< ", which is below the acceptance threshold of " << m_accepted_error << "." << std::endl;
+					<< ", which is below the acceptance threshold of " << m_accepted_error << "." << std::endl;
 				break;
 			}
 
@@ -148,6 +160,6 @@ namespace NTL
 
 
 		return overall_best_Cn;
-	}	
+	}
 
 }
