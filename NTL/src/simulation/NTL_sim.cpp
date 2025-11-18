@@ -2,31 +2,34 @@
 #include <string>
 namespace NTL
 {
-	void NTL_sim::merge(const char* title)
+	QMainWindow* NTL_sim::merge(const char* title)
 	{
-		m_plotter.combine(m_windows, title);
+		return m_plotter.combine(m_windows, title);
 	}
 
-	void NTL_sim::z_profile(const char* title, double step_size)
+	QMainWindow* NTL_sim::z_profile(const char* title, double step_size)
 	{
 		auto z_vec = m_ntl.get_Z_vec(step_size);
-		m_windows.push_back(m_plotter.plot(z_vec, title));
+		QMainWindow* window = m_plotter.plot(z_vec, "Z", title);
+		m_windows.push_back(window);
+		return window;
 	}
 
-	void NTL_sim::w_h_profile(const char* title, double step_size)
+	QMainWindow* NTL_sim::w_h_profile(const char* title, double step_size)
 	{
 		auto w_h_vec = m_ntl.get_w_h_vec(step_size);
-
-		m_windows.push_back(m_plotter.plot_mirror(w_h_vec, title));
+		QMainWindow* window = m_plotter.plot_mirror(w_h_vec, title);
+		m_windows.push_back(window);
+		return window;
 	}
 
-	void NTL_sim::s_matrix(double Zs, double Zl, const char* title)
+	std::vector<QMainWindow*> NTL_sim::s_matrix(double Zs, double Zl, const char* title)
 	{
 		if (Zs < 0 || Zl < 0 || 0 < Zs < 1e-6 || 0 < Zl < 1e-6)
 			throw(std::invalid_argument("Invalid terminsl impedances, S_matrix simulation" + std::string(title)));
 
 		std::vector<std::pair<double, double>> S11, S12, S21, S22;
-		
+
 		double points = (m_fmax - m_fmin) / m_fstep + 1;
 		S11.reserve(points);
 		S12.reserve(points);
@@ -43,13 +46,84 @@ namespace NTL
 			S22.emplace_back(f, 20 * std::log10(std::abs(S_matrix(1, 1))));
 		}
 
-		m_windows.push_back(m_plotter.plot(S11, ("S11" + std::string(title)).c_str()));
-		m_windows.push_back(m_plotter.plot(S12, ("S12" + std::string(title)).c_str()));
-		m_windows.push_back(m_plotter.plot(S21, ("S21" + std::string(title)).c_str()));
-		m_windows.push_back(m_plotter.plot(S22, ("S22" + std::string(title)).c_str()));
+		std::vector<QMainWindow*> window_vec;
+
+		window_vec.push_back(m_plotter.plot(S11, "S11", ("S11 " + std::string(title)).c_str()));
+		window_vec.push_back(m_plotter.plot(S12, "S12", ("S12 " + std::string(title)).c_str()));
+		window_vec.push_back(m_plotter.plot(S21, "S21", ("S21 " + std::string(title)).c_str()));
+		window_vec.push_back(m_plotter.plot(S22, "S22", ("S22 " + std::string(title)).c_str()));
+
+		for (int i = 0; i < window_vec.size(); i++)
+			m_windows.push_back(window_vec[i]);
+
+
+		return window_vec;
 	}
 
-	void NTL_sim::s_matrix(int index, double Zs, double Zl, const char* title)
+	std::vector<QMainWindow*> NTL_sim::s_matrix(double Zs, std::vector<double> Zl, std::vector<std::string> labels, const char* title)
+	{
+		if (Zs < 0 || 0 < Zs < 1e-6)
+			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation"));
+		for (auto& Z : Zl)
+			if (Z < 0 || 0 < Z < 1e-6)
+				throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation"));
+		if (!labels.empty() && labels.size() != Zl.size())
+			throw(std::invalid_argument("Invalid number of labels, S_matrix simulation"));
+
+		std::vector<std::vector<std::pair<double, double>>> S11, S12, S21, S22;
+		std::vector<const char*> S11_label, S12_label, S21_label, S22_label;
+		std::vector<std::string> temp;
+		S11.resize(Zl.size()); S11_label.resize(Zl.size()); temp.resize(Zl.size());
+		S12.resize(Zl.size()); S12_label.resize(Zl.size());
+		S21.resize(Zl.size()); S21_label.resize(Zl.size());
+		S22.resize(Zl.size()); S22_label.resize(Zl.size());
+
+		double points = (m_fmax - m_fmin) / m_fstep + 1;
+
+		for (int i = 0; i < Zl.size(); i++)
+		{
+			S11[i].reserve(points);
+			S12[i].reserve(points);
+			S21[i].reserve(points);
+			S22[i].reserve(points);
+
+			if (labels.empty())
+				temp[i] = "Z" + std::to_string(i + 1);
+			else
+				temp[i] = labels[i];
+			S11_label[i] = temp[i].c_str();
+			S12_label[i] = temp[i].c_str();
+			S21_label[i] = temp[i].c_str();
+			S22_label[i] = temp[i].c_str();
+		}
+
+		for (double f = m_fmin; f < m_fmax; f += m_fstep)
+		{
+			for (int i = 0; i < Zl.size(); i++)
+			{
+				matrix2x2cd S_matrix = m_ntl.S_matrix(f, Zs, Zl[i]);
+
+				S11[i].emplace_back(f, 20 * std::log10(std::abs(S_matrix(0, 0))));
+				S12[i].emplace_back(f, 20 * std::log10(std::abs(S_matrix(0, 1))));
+				S21[i].emplace_back(f, 20 * std::log10(std::abs(S_matrix(1, 0))));
+				S22[i].emplace_back(f, 20 * std::log10(std::abs(S_matrix(1, 1))));
+			}
+		}
+
+		std::vector<QMainWindow*> window_vec;
+
+		window_vec.push_back(m_plotter.plot(S11, S11_label, ("S11 " + std::string(title)).c_str()));
+		window_vec.push_back(m_plotter.plot(S12, S12_label, ("S12 " + std::string(title)).c_str()));
+		window_vec.push_back(m_plotter.plot(S21, S21_label, ("S21 " + std::string(title)).c_str()));
+		window_vec.push_back(m_plotter.plot(S22, S22_label, ("S22 " + std::string(title)).c_str()));
+
+		for (int i = 0; i < window_vec.size(); i++)
+			m_windows.push_back(window_vec[i]);
+
+		return window_vec;
+	}
+
+	QMainWindow* NTL_sim::s_matrix(int index, double Zs, double Zl, const char* title)
 	{
 		if (Zs < 0 || Zl < 0 || 0 < Zs < 1e-6 || 0 < Zl < 1e-6)
 			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation" + std::string(title)));
@@ -62,7 +136,7 @@ namespace NTL
 			throw(std::invalid_argument("Invalid indices, S_matrix simulation " + std::string(title)));
 
 		std::vector<std::pair<double, double>> S;
-		
+
 		double points = (m_fmax - m_fmin) / m_fstep + 1;
 		S.reserve(points);
 
@@ -73,7 +147,72 @@ namespace NTL
 			S.emplace_back(f, 20 * std::log10(std::abs(S_matrix(first_index - 1, second_index - 1))));
 		}
 
-		m_windows.push_back(m_plotter.plot(S, ("S" + std::to_string(index) + std::string(title)).c_str()));
+		std::string title_temp;
+		if (title == "")
+		{
+			title_temp = "S" + std::to_string(first_index) + std::to_string(second_index);
+			title = title_temp.c_str();
+		}
+		QMainWindow* window = m_plotter.plot(S, ("S" + std::to_string(first_index) + std::to_string(second_index)).c_str(), title);
+		m_windows.push_back(window);
+		return window;
+	}
 
+	QMainWindow* NTL_sim::s_matrix(int index, double Zs, std::vector<double> Zl, std::vector<std::string> labels, const char* title)
+	{
+		if (Zs < 0 || 0 < Zs < 1e-6)
+			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation"));
+		for (auto& Z : Zl)
+			if (Z < 0 || 0 < Z < 1e-6)
+				throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation"));
+		if (!labels.empty() && labels.size() != Zl.size())
+			throw(std::invalid_argument("Invalid number of labels, S_matrix simulation"));
+
+		int first_index = index / 10;
+		int second_index = index % 10;
+
+		if (first_index < 1 || first_index > 2 ||
+			second_index < 1 || second_index > 2)
+			throw(std::invalid_argument("Invalid indices, S_matrix simulation " + std::string(title)));
+
+		std::vector<std::vector<std::pair<double, double>>> S;
+		std::vector<const char*> S_label;
+		std::vector<std::string> temp;
+		S.resize(Zl.size()); S_label.resize(Zl.size()); temp.resize(Zl.size());
+
+		double points = (m_fmax - m_fmin) / m_fstep + 1;
+
+		for (int i = 0; i < Zl.size(); i++)
+		{
+			S[i].reserve(points);
+
+			if (labels.empty())
+				temp[i] = "Z" + std::to_string(i + 1);
+			else
+				temp[i] = labels[i];
+			S_label[i] = temp[i].c_str();
+
+		}
+
+		for (double f = m_fmin; f < m_fmax; f += m_fstep)
+		{
+			for (int i = 0; i < Zl.size(); i++)
+			{
+				matrix2x2cd S_matrix = m_ntl.S_matrix(f, Zs, Zl[i]);
+
+				S[i].emplace_back(f, 20 * std::log10(std::abs(S_matrix(first_index - 1, second_index - 1))));
+			}
+		}
+
+		std::string title_temp;
+		if (title == "")
+		{
+			title_temp = "S" + std::to_string(first_index) + std::to_string(second_index);
+			title = title_temp.c_str();
+		}
+		QMainWindow* window = m_plotter.plot(S, S_label, title);
+
+		m_windows.push_back(window);
+		return window;
 	}
 }

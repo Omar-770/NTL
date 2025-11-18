@@ -11,40 +11,50 @@
 
 int main(int argc, char* argv[])
 {
-	QApplication app(argc, argv);
-
-	NTL::NTL_opt_setup setup;
-	setup.Z0 = 50; setup.Zs = 50; setup.Zl = 100; setup.er = 4.6; setup.d = 78e-3; setup.freqs = { 0.5e9, 1.3e9, 2e9 };
-	setup.N = 10; setup.K = 50; setup.lb = std::vector<double>(setup.N, -1);  setup.ub = std::vector<double>(setup.N, 1);
-	setup.toll_bounds = std::vector<double>(2, 1e-6); setup.toll_z = std::vector<double>(setup.K, 1e-6);
-	setup.GBL_MAX = 350e3; setup.LCL_MAX = 50e3; setup.accepted_error = 6e-3;
-	setup.m_Z_min = 0.1 * setup.Z0; setup.m_Z_max = 2.6 * setup.Z0; setup.max_attempts = 20;
-
-	NTL::NTL_opt opt(setup);
-	NTL::NTL ntl;
-
-
 	try
 	{
-		ntl = opt.optimise(ntl, NTL::console::inactive);
 
+		QApplication app(argc, argv);
 
-		std::cout << "Result:\t" << ntl.get_Cn() << std::endl;
+		NTL::NTL_opt_setup setup1, setup2;
+		setup1.Z0 = 50; setup1.Zs = 50; setup1.Zl = { 50, 100, 150 }; setup1.er = 4.6; setup1.d = 78e-3; setup1.freqs = { 0.5e9, 1.3e9, 2e9 };
+		setup1.N = 10; setup1.K = 50; setup1.lb = std::vector<double>(setup1.N, -1);  setup1.ub = std::vector<double>(setup1.N, 1);
+		setup1.toll_bounds = std::vector<double>(2, 1e-6); setup1.toll_z = std::vector<double>(setup1.K, 1e-6);
+		setup1.GBL_MAX = 350e3; setup1.LCL_MAX = 50e3; setup1.accepted_error = 6e-3;
+		setup1.m_Z_min = 0.1 * setup1.Z0; setup1.m_Z_max = 2.6 * setup1.Z0; setup1.max_attempts = 10;
 
-		NTL::NTL_sim sim(ntl);
-		sim.set_f_sweep(1, 2e9);
-		sim.z_profile();
-		sim.w_h_profile();
-		sim.s_matrix(11, setup.Zs, setup.Zl);
-		sim.s_matrix(12, setup.Zs, setup.Zl);
+		setup2 = setup1;
+		setup2.Zl = { 50, 50.0 / 2, 50.0 / 3 };
 
-		sim.merge("NTL (1)");
+		NTL::NTL ntl1, ntl2;
+		NTL::NTL_opt opt1(setup1), opt2(setup2);
+
+		std::cout << "Optimising first NTL\n\n";
+		ntl1 = opt1.optimise(ntl1, NTL::console::active);
+		std::cout << "\n\nOptimising second NTL\n\n";
+		ntl2 = opt2.optimise(ntl2, NTL::console::active);
+
+		NTL::NTL_sim sim1(ntl1), sim2(ntl2);
+
+		std::vector<QMainWindow*> windows;
+
+		sim1.set_f_sweep(1e7, 2.2e9);
+		windows.emplace_back(sim1.w_h_profile("NTL (1)"));
+		windows.emplace_back(sim1.s_matrix(11, setup1.Zs, setup1.Zl, { "50", "100", "150" }, "NTL (1)"));
+
+		sim2.set_f_sweep(1e7, 2.2e9);
+		windows.emplace_back(sim2.w_h_profile("NTL (2)"));
+		windows.emplace_back(sim2.s_matrix(11, setup2.Zs, setup2.Zl, { "50", "25", "16.67" }, "NTL (2)"));
+
+		qt_plot all;
+		all.combine(windows, "NTLs");
 
 		app.exec();
 	}
 	catch (std::invalid_argument& e)
 	{
-		std::cout << e.what();
+		std::cout << "Invalid argument exception: ";
+		std::cout << e.what() << std::endl;
 	}
 
 	return 0;
