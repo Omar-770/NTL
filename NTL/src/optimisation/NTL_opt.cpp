@@ -6,8 +6,12 @@ namespace NTL
 	{
 		if (m_Z0 == 0 || m_er == 0 || m_d == 0)
 			throw(std::invalid_argument("Invalid NTL physical charachteristics"));
-		if (m_Zs == 0 || m_Zl == 0)
-			throw(std::invalid_argument("Invalid source/load impedance(s)"));
+		if (0 < m_Zs < 1e-6)
+			throw(std::invalid_argument("Invalid source impedance"));
+		for (auto& z : m_Zl)
+			if (0 < z < 1e-6)
+				throw(std::invalid_argument("Invalid load impedance(s)"));
+
 		if (m_freqs.empty())
 			throw(std::invalid_argument("Empty frequency vector"));
 		if (m_Z_min == 0 || m_Z_max == 0 || m_Z_max < m_Z_min)
@@ -25,8 +29,11 @@ namespace NTL
 	{
 		if (m_Z0 == 0 || m_er == 0 || m_d == 0)
 			throw(std::invalid_argument("Invalid NTL physical charachteristics"));
-		if (m_Zs == 0 || m_Zl == 0)
-			throw(std::invalid_argument("Invalid source/load impedance(s)"));
+		if (0 < m_Zs < 1e-6)
+			throw(std::invalid_argument("Invalid source impedance"));
+		for (auto& z : m_Zl)
+			if (0 < z < 1e-6)
+				throw(std::invalid_argument("Invalid load impedance(s)"));
 		if (m_freqs.empty())
 			throw(std::invalid_argument("Empty frequency vector"));
 		if (m_Z_min == 0 || m_Z_max == 0 || m_Z_max < m_Z_min)
@@ -44,14 +51,18 @@ namespace NTL
 
 	double NTL_opt::min_objective(const std::vector<double>& Cn) const
 	{
+
 		double sum_squares{};
 
-		for (double f : m_freqs)
+		for (int i = 0; i < m_freqs.size(); i++)
 		{
+			double f = m_freqs[i];
+			double Zl = m_Zl[i];
+
 			matrix2x2cd T = calculate_T_matrix(m_Z0, m_er, m_d, Cn, f, m_K);
 
 			std::complex<double> a = T(0, 0), b = T(0, 1), c = T(1, 0), d = T(1, 1);
-			std::complex<double> Zin = (m_Zl * a + b) / (m_Zl * c + d);
+			std::complex<double> Zin = (Zl * a + b) / (Zl * c + d);
 			std::complex<double> gamma = (Zin - m_Zs) / (Zin + m_Zs);
 			sum_squares += std::pow(std::norm(gamma), 2);
 		}
