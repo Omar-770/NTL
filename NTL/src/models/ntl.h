@@ -70,10 +70,6 @@ namespace NTL
 			: m_Z0(data.Z0), m_er(data.er), m_d(data.d), m_Cn(data.Cn) {
 		};
 
-		void operator=(const NTL& ntl) {
-			m_Z0 = ntl.get_Z0(); m_er = ntl.get_er(); m_d = ntl.get_d(); m_Cn = ntl.get_Cn();
-		}
-
 		//impedance profiles
 		double Z(double z) const;
 		double W_H(double z) const;
