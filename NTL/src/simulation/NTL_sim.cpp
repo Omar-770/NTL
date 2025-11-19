@@ -7,23 +7,23 @@ namespace NTL
 		return m_plotter.combine(m_windows, title);
 	}
 
-	QMainWindow* NTL_sim::z_profile(const char* title, double step_size)
+	QMainWindow* NTL_sim::z_profile(int m,const char* title, double step_size)
 	{
-		auto z_vec = m_ntl.get_Z_vec(step_size);
+		auto z_vec = m_ntl[m - 1].get_Z_vec(step_size);
 		QMainWindow* window = m_plotter.plot(z_vec, "Z", title);
 		m_windows.push_back(window);
 		return window;
 	}
 
-	QMainWindow* NTL_sim::w_h_profile(const char* title, double step_size)
+	QMainWindow* NTL_sim::w_h_profile(int m,const char* title, double step_size)
 	{
-		auto w_h_vec = m_ntl.get_w_h_vec(step_size);
+		auto w_h_vec = m_ntl[m - 1].get_w_h_vec(step_size);
 		QMainWindow* window = m_plotter.plot_mirror(w_h_vec, title);
 		m_windows.push_back(window);
 		return window;
 	}
 
-	std::vector<QMainWindow*> NTL_sim::s_matrix(double Zs, double Zl, const char* title)
+	std::vector<QMainWindow*> NTL_sim::s_matrix(int m, double Zs, double Zl, const char* title)
 	{
 		if (Zs < 0 || Zl < 0 || 0 < Zs < 1e-6 || 0 < Zl < 1e-6)
 			throw(std::invalid_argument("Invalid terminsl impedances, S_matrix simulation" + std::string(title)));
@@ -38,7 +38,7 @@ namespace NTL
 
 		for (double f = m_fmin; f < m_fmax; f += m_fstep)
 		{
-			matrix2x2cd S_matrix = m_ntl.S_matrix(f, Zs, Zl);
+			matrix2x2cd S_matrix = m_ntl[m - 1].S_matrix(f, Zs, Zl);
 
 			S11.emplace_back(f, 20 * std::log10(std::abs(S_matrix(0, 0))));
 			S12.emplace_back(f, 20 * std::log10(std::abs(S_matrix(0, 1))));
@@ -60,7 +60,7 @@ namespace NTL
 		return window_vec;
 	}
 
-	std::vector<QMainWindow*> NTL_sim::s_matrix(double Zs, std::vector<double> Zl, std::vector<std::string> labels, const char* title)
+	std::vector<QMainWindow*> NTL_sim::s_matrix(int m, double Zs, std::vector<double> Zl, std::vector<std::string> labels, const char* title)
 	{
 		if (Zs < 0 || 0 < Zs < 1e-6)
 			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation"));
@@ -101,7 +101,7 @@ namespace NTL
 		{
 			for (int i = 0; i < Zl.size(); i++)
 			{
-				matrix2x2cd S_matrix = m_ntl.S_matrix(f, Zs, Zl[i]);
+				matrix2x2cd S_matrix = m_ntl[m - 1].S_matrix(f, Zs, Zl[i]);
 
 				S11[i].emplace_back(f, 20 * std::log10(std::abs(S_matrix(0, 0))));
 				S12[i].emplace_back(f, 20 * std::log10(std::abs(S_matrix(0, 1))));
@@ -123,7 +123,7 @@ namespace NTL
 		return window_vec;
 	}
 
-	QMainWindow* NTL_sim::s_matrix(int index, double Zs, double Zl, const char* title)
+	QMainWindow* NTL_sim::s_matrix(int m, int index, double Zs, double Zl, const char* title)
 	{
 		if (Zs < 0 || Zl < 0 || 0 < Zs < 1e-6 || 0 < Zl < 1e-6)
 			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation" + std::string(title)));
@@ -142,7 +142,7 @@ namespace NTL
 
 		for (double f = m_fmin; f < m_fmax; f += m_fstep)
 		{
-			matrix2x2cd S_matrix = m_ntl.S_matrix(f, Zs, Zl);
+			matrix2x2cd S_matrix = m_ntl[m - 1].S_matrix(f, Zs, Zl);
 
 			S.emplace_back(f, 20 * std::log10(std::abs(S_matrix(first_index - 1, second_index - 1))));
 		}
@@ -158,7 +158,7 @@ namespace NTL
 		return window;
 	}
 
-	QMainWindow* NTL_sim::s_matrix(int index, double Zs, std::vector<double> Zl, std::vector<std::string> labels, const char* title)
+	QMainWindow* NTL_sim::s_matrix(int m, int index, double Zs, std::vector<double> Zl, std::vector<std::string> labels, const char* title)
 	{
 		if (Zs < 0 || 0 < Zs < 1e-6)
 			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation"));
@@ -198,7 +198,7 @@ namespace NTL
 		{
 			for (int i = 0; i < Zl.size(); i++)
 			{
-				matrix2x2cd S_matrix = m_ntl.S_matrix(f, Zs, Zl[i]);
+				matrix2x2cd S_matrix = m_ntl[m - 1].S_matrix(f, Zs, Zl[i]);
 
 				S[i].emplace_back(f, 20 * std::log10(std::abs(S_matrix(first_index - 1, second_index - 1))));
 			}
