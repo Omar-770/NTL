@@ -9,6 +9,9 @@ namespace NTL
 
 	QMainWindow* NTL_sim::z_profile(int m,const char* title, double step_size)
 	{
+		if (m < 1 || m > m_ntl.size())
+			throw(std::invalid_argument("NTL not in simulation buffer " + std::string(title)));
+
 		auto z_vec = m_ntl[m - 1].get_Z_vec(step_size);
 		QMainWindow* window = m_plotter.plot(z_vec, "Z", title);
 		m_windows.push_back(window);
@@ -17,6 +20,9 @@ namespace NTL
 
 	QMainWindow* NTL_sim::w_h_profile(int m,const char* title, double step_size)
 	{
+		if (m < 1 || m > m_ntl.size())
+			throw(std::invalid_argument("NTL not in simulation buffer " + std::string(title)));
+
 		auto w_h_vec = m_ntl[m - 1].get_w_h_vec(step_size);
 		QMainWindow* window = m_plotter.plot_mirror(w_h_vec, title);
 		m_windows.push_back(window);
@@ -25,8 +31,10 @@ namespace NTL
 
 	std::vector<QMainWindow*> NTL_sim::s_matrix(int m, double Zs, double Zl, const char* title)
 	{
-		if (Zs < 0 || Zl < 0 || 0 < Zs < 1e-6 || 0 < Zl < 1e-6)
-			throw(std::invalid_argument("Invalid terminsl impedances, S_matrix simulation" + std::string(title)));
+		if (Zs < 1e-6 || Zl < 1e-6)
+			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation" + std::string(title)));
+		if (m < 1 || m > m_ntl.size())
+			throw(std::invalid_argument("NTL not in simulation buffer " + std::string(title)));
 
 		std::vector<std::pair<double, double>> S11, S12, S21, S22;
 
@@ -62,13 +70,17 @@ namespace NTL
 
 	std::vector<QMainWindow*> NTL_sim::s_matrix(int m, double Zs, std::vector<double> Zl, std::vector<std::string> labels, const char* title)
 	{
-		if (Zs < 0 || 0 < Zs < 1e-6)
+		if (Zs < 1e-6)
 			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation"));
 		for (auto& Z : Zl)
-			if (Z < 0 || 0 < Z < 1e-6)
+			if (Z < 1e-6)
 				throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation"));
 		if (!labels.empty() && labels.size() != Zl.size())
 			throw(std::invalid_argument("Invalid number of labels, S_matrix simulation"));
+		if (m < 1 || m > m_ntl.size())
+			throw(std::invalid_argument("NTL not in simulation buffer " + std::string(title)));
+
+
 
 		std::vector<std::vector<std::pair<double, double>>> S11, S12, S21, S22;
 		std::vector<const char*> S11_label, S12_label, S21_label, S22_label;
@@ -125,7 +137,7 @@ namespace NTL
 
 	QMainWindow* NTL_sim::s_matrix(int m, int index, double Zs, double Zl, const char* title)
 	{
-		if (Zs < 0 || Zl < 0 || 0 < Zs < 1e-6 || 0 < Zl < 1e-6)
+		if (Zs < 1e-6 || Zl < 1e-6)
 			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation" + std::string(title)));
 
 		int first_index = index / 10;
@@ -134,6 +146,9 @@ namespace NTL
 		if (first_index < 1 || first_index > 2 ||
 			second_index < 1 || second_index > 2)
 			throw(std::invalid_argument("Invalid indices, S_matrix simulation " + std::string(title)));
+		
+		if(m < 1 || m > m_ntl.size())
+			throw(std::invalid_argument("NTL not in simulation buffer " + std::string(title)));
 
 		std::vector<std::pair<double, double>> S;
 
@@ -160,13 +175,15 @@ namespace NTL
 
 	QMainWindow* NTL_sim::s_matrix(int m, int index, double Zs, std::vector<double> Zl, std::vector<std::string> labels, const char* title)
 	{
-		if (Zs < 0 || 0 < Zs < 1e-6)
+		if (Zs < 1e-6)
 			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation"));
 		for (auto& Z : Zl)
-			if (Z < 0 || 0 < Z < 1e-6)
+			if (Z < 1e-6)
 				throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation"));
 		if (!labels.empty() && labels.size() != Zl.size())
 			throw(std::invalid_argument("Invalid number of labels, S_matrix simulation"));
+		if (m < 1 || m > m_ntl.size())
+			throw(std::invalid_argument("NTL not in simulation buffer " + std::string(title)));
 
 		int first_index = index / 10;
 		int second_index = index % 10;

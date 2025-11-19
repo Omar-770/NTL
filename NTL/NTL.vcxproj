@@ -97,6 +97,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\common\file_handler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\simulation\NTL_sim.cpp" />
     <ClCompile Include="src\optimisation\NTL_opt.cpp" />
@@ -104,6 +105,7 @@
     <ClCompile Include="src\models\ntl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\common\file_handler.h" />
     <ClInclude Include="src\simulation\NTL_sim.h" />
     <ClInclude Include="src\optimisation\NTL_opt.h" />
     <ClInclude Include="src\common\helpers.h" />
