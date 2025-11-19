@@ -74,7 +74,7 @@ namespace NTL
 
 				if (result_this_attempt.final_error > m_accepted_error)
 				{
-					m_d += 1e-3;
+					m_d += resolution;
 					break;
 				}
 
