@@ -2,6 +2,7 @@
 #include "optimiser.h"
 #include <omp.h>
 #include <iostream>
+#include <chrono>
 
 namespace NTL
 {
@@ -32,23 +33,11 @@ namespace NTL
 	class NTL_opt : public opt
 	{
 	public:
-		NTL_opt(const NTL_opt_setup& setup) : opt(setup),
-			m_Z0(setup.Z0), m_er(setup.er), m_d(setup.d), m_Zs(setup.Zs), m_Zl(setup.Zl),
-			m_freqs(setup.freqs), m_K(setup.K), m_Z_min(setup.m_Z_min), m_Z_max(setup.m_Z_max)
-		{
-			if (m_Zl.size() < m_freqs.size() && m_Zl.size() != 1)
-				throw(std::invalid_argument("Number of load impedances & frequency points mismatch"));
-
-			if (m_Zl.size() == 1)
-			{
-				m_Zl.resize(m_freqs.size());
-				for (int i = 1; i < m_Zl.size(); i++)
-					m_Zl[i] = m_Zl[0];
-			}
-		}
+		NTL_opt(const NTL_opt_setup& setup);
 
 		NTL_opt_result optimise(console mode = console::inactive);
 
+		NTL_opt_result optimise_d(double resolution, console mode = console::inactive);
 		NTL_opt_result optimise_d(console mode = console::inactive);
 		
 

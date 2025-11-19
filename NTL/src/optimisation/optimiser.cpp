@@ -3,11 +3,16 @@
 
 namespace NTL
 {
-	opt_result opt::optimiser(console mode)
+	opt::opt(const opt_setup& setup) : m_N(setup.N), m_lb(setup.lb), m_ub(setup.ub), m_toll_bounds(setup.toll_bounds),
+		m_toll_z(setup.toll_z), m_GBL_MAX(setup.GBL_MAX), m_LCL_MAX(setup.LCL_MAX), m_accepted_error(setup.accepted_error),
+		m_max_attempts(setup.max_attempts)
 	{
 		if (m_N == 0 || m_lb.empty() || m_ub.empty() || m_toll_bounds.empty() || m_toll_z.empty())
 			throw(std::invalid_argument("Incomplete optimisation setup"));
+	}
 
+	opt_result opt::optimiser(console mode)
+	{
 		bool output = (mode == console::active) ? true : false;
 
 		double overall_best_error = std::numeric_limits<double>::max();

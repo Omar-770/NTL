@@ -2,52 +2,73 @@
 
 namespace NTL
 {
-	NTL_opt_result NTL_opt::optimise(console mode)
+	NTL_opt::NTL_opt(const NTL_opt_setup& setup) : opt(setup),
+		m_Z0(setup.Z0), m_er(setup.er), m_d(setup.d), m_Zs(setup.Zs), m_Zl(setup.Zl),
+		m_freqs(setup.freqs), m_K(setup.K), m_Z_min(setup.m_Z_min), m_Z_max(setup.m_Z_max)
 	{
-		if (m_Z0 == 0 || m_er == 0 || m_d == 0)
+		if (m_Zl.size() < m_freqs.size() && m_Zl.size() != 1)
+			throw(std::invalid_argument("Number of load impedances & frequency points mismatch"));
+
+		if (m_Zl.size() == 1)
+		{
+			m_Zl.resize(m_freqs.size());
+			for (int i = 1; i < m_Zl.size(); i++)
+				m_Zl[i] = m_Zl[0];
+		}
+
+		if (m_Z0 < 1e-6 || m_er < 1e-6 || m_d < 1e-6)
 			throw(std::invalid_argument("Invalid NTL physical charachteristics"));
-		if (0 < m_Zs < 1e-6)
+		if (m_Zs < 1e-6)
 			throw(std::invalid_argument("Invalid source impedance"));
 		for (auto& z : m_Zl)
-			if (0 < z < 1e-6)
+			if (z < 1e-6)
 				throw(std::invalid_argument("Invalid load impedance(s)"));
 
 		if (m_freqs.empty())
 			throw(std::invalid_argument("Empty frequency vector"));
-		if (m_Z_min == 0 || m_Z_max == 0 || m_Z_max < m_Z_min)
+		if (m_Z_min < 1e-6 || m_Z_max < 1e-6 || m_Z_max < m_Z_min)
 			throw(std::invalid_argument("Invalid min/max impedance(s)"));
+	}
 
-
+	NTL_opt_result NTL_opt::optimise(console mode)
+	{
+		bool out = (mode == console::active) ? true : false;
 		NTL ntl(m_Z0, m_er, m_d);
+		auto start_time = std::chrono::high_resolution_clock::now();
 		opt_result opt_result = optimiser(mode);
+		auto end_time = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> elapsed = end_time - start_time;
 		ntl.set_Cn(opt_result.optimised_cn);
-		
+
+		if (out)
+			std::cout << "*** Optimisation finished in " << elapsed.count() / 60.0 << " minutes" << std::endl;
 		return NTL_opt_result(opt_result, ntl);
 	}
 
-	NTL_opt_result NTL_opt::optimise_d(console mode)
+	NTL_opt_result NTL_opt::optimise_d(double resolution, console mode)
 	{
 		bool out = (mode == console::active) ? true : false;
 
 		NTL ntl(m_Z0, m_er, m_d);
-		
+
 		double init_d = m_d;
 		int init_max_attempts = m_max_attempts;
 
-		double init_error = optimiser(mode).final_error;
-		opt_result new_result;
-		
-		if (init_error < m_accepted_error)
+		auto start_time = std::chrono::high_resolution_clock::now();
+		opt_result init_result = optimiser(mode);
+		opt_result new_result = init_result;
+
+		if (init_result.final_error < m_accepted_error)
 		{
-			double error_this_attempt = init_error;
-			
+			double error_this_attempt = init_result.final_error;
+
 			while (true)
 			{
-				m_d -= 1e-3;
-				//m_max_attempts = 5;
+				m_d -= resolution;
 
 				if (out)
-					std::cout << "\n\t===>>> Trimming NTL by 1mm to: \t" << m_d << std::endl;
+					std::cout << "\n\t===>>> Trimming NTL by " << resolution * 1000 << "mm to:\t"
+					 << m_d * 1000 << "mm" << std::endl;
 
 				opt_result result_this_attempt = optimiser(mode);
 
@@ -57,21 +78,32 @@ namespace NTL
 					break;
 				}
 
-				new_result = result_this_attempt;				
+				new_result = result_this_attempt;
 			}
-			
+
 		}
+
+		auto end_time = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> elapsed = end_time - start_time;
 
 		ntl.set_d(m_d);
 		ntl.set_Cn(new_result.optimised_cn);
 
 		if (out)
-			std::cout << "Final NTL length:\t" << ntl.get_d() << std::endl;
+		{
+			std::cout << "Final NTL length:\t" << ntl.get_d() * 1000 << "mm" << std::endl;
+			std::cout << "*** Optimisation finished in " << elapsed.count() / 60.0 << " minutes" << std::endl;
+		}
 
 		m_d = init_d;
 		m_max_attempts = init_max_attempts;
 
 		return NTL_opt_result(new_result, ntl);
+	}
+
+	NTL_opt_result NTL_opt::optimise_d(console mode)
+	{
+		return optimise_d(1.0e-3, mode);
 	}
 
 
