@@ -3,7 +3,7 @@
 
 namespace NTL
 {
-	std::vector<double> opt::optimiser(console mode)
+	opt_result opt::optimiser(console mode)
 	{
 		if (m_N == 0 || m_lb.empty() || m_ub.empty() || m_toll_bounds.empty() || m_toll_z.empty())
 			throw(std::invalid_argument("Incomplete optimisation setup"));
@@ -115,7 +115,7 @@ namespace NTL
 			}
 			else
 			{
-				if(output)
+				if (output)
 					std::cout << "Skipping Local Refinement Phase..." << std::endl;
 				best_Cn_this_attempt = Cn_this_attempt;
 				final_minf_this_attempt = global_minf;
@@ -151,7 +151,7 @@ namespace NTL
 		/// RESULTS ///
 		if (output)
 		{
-			std::cout << "\n\n\n==============================================" << std::endl;
+			std::cout << "==============================================" << std::endl;
 			std::cout << "           OPTIMIZATION COMPLETE" << std::endl;
 			std::cout << "==============================================" << std::endl;
 			std::cout << "Final best error found: " << overall_best_error << "\t at ";
@@ -159,7 +159,7 @@ namespace NTL
 		}
 
 
-		return overall_best_Cn;
+		return  { overall_best_Cn, overall_best_error };
 	}
 
 }

@@ -2,7 +2,7 @@
 
 namespace NTL
 {
-	NTL NTL_opt::optimise(console mode)
+	NTL_opt_result NTL_opt::optimise(console mode)
 	{
 		if (m_Z0 == 0 || m_er == 0 || m_d == 0)
 			throw(std::invalid_argument("Invalid NTL physical charachteristics"));
@@ -19,35 +19,61 @@ namespace NTL
 
 
 		NTL ntl(m_Z0, m_er, m_d);
-		std::vector<double> cn = optimiser(mode);
-		ntl.set_Cn(cn);
+		opt_result opt_result = optimiser(mode);
+		ntl.set_Cn(opt_result.optimised_cn);
 		
-		return ntl;
+		return NTL_opt_result(opt_result, ntl);
 	}
 
-	NTL NTL_opt::optimise(NTL& ntl, console mode)
+	NTL_opt_result NTL_opt::optimise_d(console mode)
 	{
-		if (m_Z0 == 0 || m_er == 0 || m_d == 0)
-			throw(std::invalid_argument("Invalid NTL physical charachteristics"));
-		if (0 < m_Zs < 1e-6)
-			throw(std::invalid_argument("Invalid source impedance"));
-		for (auto& z : m_Zl)
-			if (0 < z < 1e-6)
-				throw(std::invalid_argument("Invalid load impedance(s)"));
-		if (m_freqs.empty())
-			throw(std::invalid_argument("Empty frequency vector"));
-		if (m_Z_min == 0 || m_Z_max == 0 || m_Z_max < m_Z_min)
-			throw(std::invalid_argument("Invalid min/max impedance(s)"));
+		bool out = (mode == console::active) ? true : false;
 
-		std::vector<double> cn = optimiser(mode);
-	
-		ntl.set_Z0(m_Z0);
-		ntl.set_er(m_er);
+		NTL ntl(m_Z0, m_er, m_d);
+		
+		double init_d = m_d;
+		int init_max_attempts = m_max_attempts;
+
+		double init_error = optimiser(mode).final_error;
+		opt_result new_result;
+		
+		if (init_error < m_accepted_error)
+		{
+			double error_this_attempt = init_error;
+			
+			while (true)
+			{
+				m_d -= 1e-3;
+				//m_max_attempts = 5;
+
+				if (out)
+					std::cout << "\n\t===>>> Trimming NTL by 1mm to: \t" << m_d << std::endl;
+
+				opt_result result_this_attempt = optimiser(mode);
+
+				if (result_this_attempt.final_error > m_accepted_error)
+				{
+					m_d += 1e-3;
+					break;
+				}
+
+				new_result = result_this_attempt;				
+			}
+			
+		}
+
 		ntl.set_d(m_d);
-		ntl.set_Cn(cn);
+		ntl.set_Cn(new_result.optimised_cn);
 
-		return ntl;
+		if (out)
+			std::cout << "Final NTL length:\t" << ntl.get_d() << std::endl;
+
+		m_d = init_d;
+		m_max_attempts = init_max_attempts;
+
+		return NTL_opt_result(new_result, ntl);
 	}
+
 
 	double NTL_opt::min_objective(const std::vector<double>& Cn) const
 	{

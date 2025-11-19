@@ -10,6 +10,7 @@ namespace NTL
 {
 	class opt;
 	struct opt_setup;
+	struct opt_result;
 	enum class console;
 
 	struct opt_setup
@@ -23,6 +24,12 @@ namespace NTL
 		double LCL_MAX{ 0 };
 		double accepted_error{ 0 };
 		int max_attempts{ 10'000 };
+	};
+
+	struct opt_result
+	{
+		std::vector<double> optimised_cn;
+		double final_error;
 	};
 
 	enum class console
@@ -42,7 +49,9 @@ namespace NTL
 		}
 
 	protected:
-		std::vector<double> optimiser(console mode = console::inactive);
+		opt_result optimiser(console mode = console::inactive);
+		double m_accepted_error;
+		int m_max_attempts;
 
 	private:
 		int m_N;
@@ -52,8 +61,8 @@ namespace NTL
 		std::vector<double> m_toll_z;
 		double m_GBL_MAX;
 		double m_LCL_MAX;
-		double m_accepted_error;
-		int m_max_attempts;
+		
+		
 
 
 	private:

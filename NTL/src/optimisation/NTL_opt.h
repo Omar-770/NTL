@@ -1,11 +1,13 @@
 #pragma once
 #include "optimiser.h"
 #include <omp.h>
+#include <iostream>
 
 namespace NTL
 {
 	class NTL_opt;
 	struct NTL_opt_setup;
+	struct NTL_opt_result;
 
 
 	struct NTL_opt_setup : public opt_setup
@@ -19,6 +21,11 @@ namespace NTL
 		int K{ 0 };
 		double m_Z_min{ 0 };
 		double m_Z_max{ 0 };
+	};
+
+	struct NTL_opt_result : public opt_result
+	{
+		NTL ntl;
 	};
 
 
@@ -40,8 +47,10 @@ namespace NTL
 			}
 		}
 
-		NTL optimise(console mode = console::inactive);
-		NTL optimise(NTL& ntl, console mode = console::inactive);
+		NTL_opt_result optimise(console mode = console::inactive);
+
+		NTL_opt_result optimise_d(console mode = console::inactive);
+		
 
 	private:
 		double m_Z0;
