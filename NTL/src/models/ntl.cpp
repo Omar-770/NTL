@@ -19,7 +19,7 @@ namespace NTL
 		return calculate_Z(ntl.get_Z0(), ntl.get_d(), ntl.get_Cn(), z);
 	}
 
-	double calculate_Z(const double* Cn, size_t n, const double& z, const double& Z0, const double& d)
+	double calculate_Z(const double* Cn, size_t n, const double& Z0, const double& d, const double& z)
 	{
 		double Z{};
 		double temp = 2 * M_PI * z / d;

@@ -130,22 +130,22 @@ namespace NTL
 
 	void NTL_opt::equality_constraints(unsigned m, double* res, unsigned n, const double* Cn) const
 	{
-		res[0] = calculate_Z(Cn, n, 0.0, m_Z0, m_d) - m_Z0;
-		res[1] = calculate_Z(Cn, n, m_d, m_Z0, m_d) - m_Z0;
+		res[0] = calculate_Z(Cn, n, m_Z0, m_d, 0) - m_Z0;
+		res[1] = calculate_Z(Cn, n, m_Z0, m_d, m_d) - m_Z0;
 	}
 
 	void NTL_opt::inequality_constraints_Zmax(unsigned m, double* res, unsigned n, const double* Cn) const
 	{
 		double dz = m_d / m_K;
 		for (int i = 0; i < m; ++i)
-			res[i] = calculate_Z(Cn, n, (i + 0.5) * dz, m_Z0, m_d) - m_Z_max;
+			res[i] = calculate_Z(Cn, n, m_Z0, m_d, (i + 0.5) * dz) - m_Z_max;
 	}
 
 	void NTL_opt::inequality_constraints_Zmin(unsigned m, double* res, unsigned n, const double* Cn) const
 	{
 		double dz = m_d / m_K;
 		for (int i = 0; i < m; ++i)
-			res[i] = m_Z_min - calculate_Z(Cn, n, (i + 0.5) * dz, m_Z0, m_d);
+			res[i] = m_Z_min - calculate_Z(Cn, n, m_Z0, m_d, (i + 0.5) * dz);
 	}
 
 	double NTL_opt::objective_with_fd_gradient(const std::vector<double>& Cn, std::vector<double>& grad, void* data) const
