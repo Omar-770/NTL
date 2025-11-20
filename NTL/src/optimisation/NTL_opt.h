@@ -2,6 +2,7 @@
 #include "optimiser.h"
 #include <omp.h>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <chrono>
 
 namespace NTL
@@ -13,6 +14,9 @@ namespace NTL
 
 	struct NTL_opt_setup : public opt_setup
 	{
+		NTL_opt_setup() {};
+		NTL_opt_setup(const NTL_opt_setup& setup) : opt_setup(setup) {};
+		NTL_opt_setup(const nlohmann::json& j);
 		double Z0{ 0 };
 		double er{ 0 };
 		double d{ 0 };
@@ -20,8 +24,10 @@ namespace NTL
 		std::vector<double> Zl{};
 		std::vector<double> freqs{};
 		int K{ 0 };
-		double m_Z_min{ 0 };
-		double m_Z_max{ 0 };
+		double Z_min{ 0 };
+		double Z_max{ 0 };
+
+		nlohmann::json get_json() const override;
 	};
 
 	struct NTL_opt_result : public opt_result

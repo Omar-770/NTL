@@ -3,6 +3,36 @@
 
 namespace NTL
 {
+	opt_setup::opt_setup(const nlohmann::json& j)
+	{
+		N = j.at("N").get<int>(); lb = j.at("lb").get<std::vector<double>>();
+		lb = j.at("lb").get<std::vector<double>>(); ub = j.at("ub").get<std::vector<double>>(); 
+		toll_bounds = j.at("toll_bounds").get<std::vector<double>>();
+		toll_z = j.at("toll_z").get<std::vector<double>>(); 
+		GBL_MAX = j.at("GBL_MAX").get<double>();
+		LCL_MAX = j.at("LCL_MAX").get<double>();
+		accepted_error = j.at("accepted_error").get<double>();
+		max_attempts = j.at("max_attempts").get<double>();
+			
+	}
+
+	nlohmann::json opt_setup::get_json() const
+	{
+		return {
+			{ "json_type", "setup" },
+			{ "setup_type", "opt"},
+			{ "N", N },
+			{ "lb", lb },
+			{ "ub", ub },
+			{ "toll_bounds", toll_bounds },
+			{ "toll_z", toll_z },
+			{ "GBL_MAX", GBL_MAX },
+			{ "LCL_MAX", LCL_MAX },
+			{ "accepted_error", accepted_error },
+			{ "max_attempts", max_attempts }
+		};
+	}
+
 	opt::opt(const opt_setup& setup) : m_N(setup.N), m_lb(setup.lb), m_ub(setup.ub), m_toll_bounds(setup.toll_bounds),
 		m_toll_z(setup.toll_z), m_GBL_MAX(setup.GBL_MAX), m_LCL_MAX(setup.LCL_MAX), m_accepted_error(setup.accepted_error),
 		m_max_attempts(setup.max_attempts)
@@ -25,7 +55,7 @@ namespace NTL
 			if (output)
 			{
 				std::cout << "\n============================================================" << std::endl;
-				std::cout << "               STARTING OPTIMIZATION ATTEMPT #" << attempt << std::endl;
+				std::cout << "               STARTING OPTIMISATION ATTEMPT #" << attempt << std::endl;
 				std::cout << "============================================================" << std::endl;
 			}
 

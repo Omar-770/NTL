@@ -2,9 +2,51 @@
 
 namespace NTL
 {
+	NTL_opt_setup::NTL_opt_setup(const nlohmann::json& j) : opt_setup(j)
+	{
+		if(j.at("setup_type") != "NTL_opt")
+			throw(std::logic_error("Attempted to read a setup from a different json object"));
+
+		Z0 = j.at("Z0").get<double>();
+		er = j.at("er").get<double>();
+		d = j.at("d").get<double>();
+		Zs = j.at("Zs").get<double>();
+		Zl = j.at("Zl").get<std::vector<double>>();
+		freqs = j.at("freqs").get<std::vector<double>>();
+		K = j.at("K").get<double>();
+		Z_min = j.at("Z_min").get<double>();
+		Z_max = j.at("Z_max").get<double>();
+	}
+
+	nlohmann::json NTL_opt_setup::get_json() const
+	{
+		return {
+			{ "json_type", "setup" },
+			{ "setup_type", "NTL_opt"},
+			{ "N", N },
+			{ "lb", lb },
+			{ "ub", ub },
+			{ "toll_bounds", toll_bounds },
+			{ "toll_z", toll_z },
+			{ "GBL_MAX", GBL_MAX },
+			{ "LCL_MAX", LCL_MAX },
+			{ "accepted_error", accepted_error },
+			{ "max_attempts", max_attempts },
+			{ "Z0", Z0 },
+			{ "er", er },
+			{ "d", d },
+			{ "Zs", Zs },
+			{ "Zl", Zl },
+			{ "freqs", freqs },
+			{ "K", K },
+			{ "Z_min", Z_min },
+			{ "Z_max", Z_max }
+		};
+	}
+
 	NTL_opt::NTL_opt(const NTL_opt_setup& setup) : opt(setup),
 		m_Z0(setup.Z0), m_er(setup.er), m_d(setup.d), m_Zs(setup.Zs), m_Zl(setup.Zl),
-		m_freqs(setup.freqs), m_K(setup.K), m_Z_min(setup.m_Z_min), m_Z_max(setup.m_Z_max)
+		m_freqs(setup.freqs), m_K(setup.K), m_Z_min(setup.Z_min), m_Z_max(setup.Z_max)
 	{
 		if (m_Zl.size() < m_freqs.size() && m_Zl.size() != 1)
 			throw(std::invalid_argument("Number of load impedances & frequency points mismatch"));
@@ -55,6 +97,8 @@ namespace NTL
 		int init_max_attempts = m_max_attempts;
 
 		auto start_time = std::chrono::high_resolution_clock::now();
+		if (out)
+			std::cout << "\n\t===>>> Starting with d = " << m_d * 1000 << "mm" << std::endl;
 		opt_result init_result = optimiser(mode);
 		opt_result new_result = init_result;
 
@@ -68,7 +112,7 @@ namespace NTL
 
 				if (out)
 					std::cout << "\n\t===>>> Trimming NTL by " << resolution * 1000 << "mm to:\t"
-					 << m_d * 1000 << "mm" << std::endl;
+					<< m_d * 1000 << "mm" << std::endl;
 
 				opt_result result_this_attempt = optimiser(mode);
 
