@@ -33,6 +33,15 @@
     <ClCompile Include="src\common\file_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\models\wpd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\simulation\WPD_sim.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\optimisation\WPD_opt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\models\ntl.h">
@@ -53,5 +62,20 @@
     <ClInclude Include="src\common\file_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\models\wpd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\simulation\WPD_sim.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\optimisation\WPD_opt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\dir\NTL1.json" />
+    <None Include="..\dir\NTL2.json" />
+    <None Include="..\dir\setup1.json" />
+    <None Include="..\dir\setup2.json" />
   </ItemGroup>
 </Project>

@@ -21,16 +21,35 @@ namespace NTL::fh
 	NTL json_to_ntl(const json& j);
 
 	//setup to json
-	json setup_to_json(const opt_setup& setup, const std::string& readme = std::string());
-	std::unique_ptr<opt_setup> json_to_setup(const json& j);
+	template<class T>
+	json setup_to_json(const T& setup, const std::string& readme = std::string())
+	{
+		return setup.get_json();
+	}
+
+	template<class T>
+	T json_to_setup(const json& j)
+	{
+		return T(j);
+	}
 
 	/// Shortcut functions
 	//NTL to file
 	std::fstream ntl_to_file(const NTL& ntl, const std::string& name, const std::string& readme = std::string());
 	NTL file_to_ntl(const std::string& name);
+
 	//setup to file
-	std::fstream setup_to_file(const opt_setup& setup, const std::string& name, const std::string& readme = std::string());
-	std::unique_ptr<opt_setup> file_to_setup(const std::string& name);
+	template<class T>
+	std::fstream setup_to_file(const T& setup, const std::string& name, const std::string& readme = std::string())
+	{
+		return json_to_file(setup_to_json<T>(setup, readme), name);
+	}
+
+	template<class T>
+	T file_to_setup(const std::string& name)
+	{
+		return json_to_setup<T>(file_to_json(name));
+	}
 
 
 }
