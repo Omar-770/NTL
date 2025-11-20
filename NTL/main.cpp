@@ -19,15 +19,20 @@ int main(int argc, char* argv[])
 	{	
 		QApplication app(argc, argv);
 		auto start_time = std::chrono::high_resolution_clock::now();
-		auto setup = fh::file_to_setup<NTL::NTL_opt_setup>("setup1");
+		auto setup1 = fh::file_to_setup<NTL::NTL_opt_setup>("setup1");
+		auto setup2 = fh::file_to_setup<NTL::NTL_opt_setup>("setup2");
 
-		NTL::NTL_opt opt(setup);
-		NTL::NTL ntl = opt.optimise_d(0.5e-3, NTL::console::active).ntl;
-		fh::ntl_to_file(ntl, "NTL1");
-		NTL::NTL_sim sim(1e6, 2.2e9);
+		NTL::NTL ntl1 = fh::file_to_ntl("NTL1");
+		NTL::NTL ntl2 = fh::file_to_ntl("NTL2");
 
-		sim.w_h_profile(ntl);
-		sim.s_matrix(ntl, 11, setup.Zs, setup.Zl);
+		NTL::NTL_sim sim(1e7, 2.2e9, 1e6);
+
+		sim.w_h_profile(ntl1);
+		sim.w_h_profile(ntl2);
+		sim.z_profile(ntl1);
+		sim.z_profile(ntl2);
+		sim.s_matrix(ntl1, 11, setup1.Zs, setup1.Zl);
+		sim.s_matrix(ntl2, 11, setup2.Zs, setup2.Zl);
 
 		sim.merge("NTL");
 		auto end_time = std::chrono::high_resolution_clock::now();

@@ -14,12 +14,12 @@ namespace NTL
 		return Z0 * std::exp(Z);
 	}
 
-	double calculate_Z(const NTL& ntl, const double z)
+	double calculate_Z(const NTL& ntl, double z)
 	{
 		return calculate_Z(ntl.get_Z0(), ntl.get_d(), ntl.get_Cn(), z);
 	}
 
-	double calculate_Z(const double* Cn, size_t n, const double& Z0, const double& d, const double& z)
+	double calculate_Z(const double* Cn, const size_t& n, const double& Z0, const double& d, const double& z)
 	{
 		double Z{};
 		double temp = 2 * M_PI * z / d;
@@ -27,6 +27,21 @@ namespace NTL
 			Z += Cn[i] * std::cos(temp * i);
 		}
 		return Z0 * std::exp(Z);
+	}
+
+	std::complex<double> calculate_Zin(double Z0, double e_r, double d, const std::vector<double>& Cn, double Zl, double f, double K)
+	{
+		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, f, K);
+
+		std::complex<double> A = T(0, 0), B = T(0, 1), C = T(1, 0), D = T(1, 1);
+		std::complex<double> Zin = (Zl * A + B) / (Zl * C + D);
+		
+		return Zin;
+	}
+
+	std::complex<double> calculate_Zin(const NTL& ntl, double Zl, double f, double K)
+	{
+		return calculate_Zin(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), Zl, f, K);
 	}
 
 
@@ -154,6 +169,11 @@ namespace NTL
 
 		return calculate_Z(m_Z0, m_d, m_Cn, z);
 
+	}
+
+	std::complex<double> NTL::Zin(double Zl, double f, int K) const
+	{
+		return calculate_Zin(*this, Zl, f, K);
 	}
 
 	double NTL::W_H(double z) const //function of position z

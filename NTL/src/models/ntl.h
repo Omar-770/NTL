@@ -22,8 +22,11 @@ namespace NTL
 
 
 	double calculate_Z(double Z0, double d, const std::vector<double>& Cn, double z);
-	double calculate_Z(const NTL& ntl, const double z);
-	double calculate_Z(const double* Cn, size_t n, const double& Z0, const double& d, const double& z); //for nlopt
+	double calculate_Z(const NTL& ntl, double z);
+	double calculate_Z(const double* Cn, const size_t& n, const double& Z0, const double& d, const double& z); //for nlopt
+
+	std::complex<double> calculate_Zin(double Z0, double e_r, double d, const std::vector<double>& Cn, double Zl, double f, double K = 50);
+	std::complex<double> calculate_Zin(const NTL& ntl, double Zl, double f, double K = 50);
 
 	double calculate_W_H(double z, double e_r);
 	double calculate_e_eff(double z, double e_r);
@@ -73,6 +76,8 @@ namespace NTL
 
 		//impedance profiles
 		double Z(double z) const;
+		std::complex<double> Zin(double Zl, double f, int K = 50) const;
+
 		double W_H(double z) const;
 		double e_eff(const double& z) const;
 
@@ -94,7 +99,7 @@ namespace NTL
 
 		//Physical parameters
 		double m_Z0; // Characteristic impedance
-		double m_er;	// Relative permittivity
+		double m_er; // Relative permittivity
 		double m_d;  // Length of the line
 
 		std::vector<double> m_Cn; // Coefficients vector
