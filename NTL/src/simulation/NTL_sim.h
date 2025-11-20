@@ -12,7 +12,12 @@ namespace NTL
 	class NTL_sim
 	{
 	public:
-		NTL_sim() {};
+		NTL_sim() : m_fmin(0), m_fmax(0), m_fstep(0) {};
+		NTL_sim(double f_min, double f_max, double f_step = 1e7)
+			: m_fmin(f_min), m_fmax(f_max), m_fstep(f_step)
+		{
+
+		}
 
 		void set_f_sweep(double f_min, double f_max, double f_step = 1e7)
 		{

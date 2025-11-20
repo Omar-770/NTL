@@ -26,7 +26,10 @@ namespace NTL
 	std::vector<QMainWindow*> NTL_sim::s_matrix(const NTL& ntl, double Zs, double Zl, const char* title)
 	{
 		if (Zs < 1e-6 || Zl < 1e-6)
-			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation" + std::string(title)));
+			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation " + std::string(title)));
+
+		if (!m_fmin || !m_fmax || !m_fstep || m_fmin > m_fmax)
+			throw(std::invalid_argument("Invalid frequency sweep " + std::string(title)));
 
 		std::vector<std::pair<double, double>> S11, S12, S21, S22;
 
@@ -63,12 +66,14 @@ namespace NTL
 	std::vector<QMainWindow*> NTL_sim::s_matrix(const NTL& ntl, double Zs, std::vector<double> Zl, std::vector<std::string> labels, const char* title)
 	{
 		if (Zs < 1e-6)
-			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation"));
+			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation " + std::string(title)));
 		for (auto& Z : Zl)
 			if (Z < 1e-6)
-				throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation"));
+				throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation " + std::string(title)));
 		if (!labels.empty() && labels.size() != Zl.size())
-			throw(std::invalid_argument("Invalid number of labels, S_matrix simulation"));
+			throw(std::invalid_argument("Invalid number of labels, S_matrix simulation " + std::string(title)));
+		if (!m_fmin || !m_fmax || !m_fstep || m_fmin > m_fmax)
+			throw(std::invalid_argument("Invalid frequency sweep " + std::string(title)));
 
 		std::vector<std::vector<std::pair<double, double>>> S11, S12, S21, S22;
 		std::vector<const char*> S11_label, S12_label, S21_label, S22_label;
@@ -134,6 +139,8 @@ namespace NTL
 		if (first_index < 1 || first_index > 2 ||
 			second_index < 1 || second_index > 2)
 			throw(std::invalid_argument("Invalid indices, S_matrix simulation " + std::string(title)));
+		if (!m_fmin || !m_fmax || !m_fstep || m_fmin > m_fmax)
+			throw(std::invalid_argument("Invalid frequency sweep " + std::string(title)));
 
 		std::vector<std::pair<double, double>> S;
 
@@ -161,12 +168,14 @@ namespace NTL
 	QMainWindow* NTL_sim::s_matrix(const NTL& ntl, int index, double Zs, std::vector<double> Zl, std::vector<std::string> labels, const char* title)
 	{
 		if (Zs < 1e-6)
-			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation"));
+			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation " + std::string(title)));
 		for (auto& Z : Zl)
 			if (Z < 1e-6)
-				throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation"));
+				throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation " + std::string(title)));
 		if (!labels.empty() && labels.size() != Zl.size())
-			throw(std::invalid_argument("Invalid number of labels, S_matrix simulation"));
+			throw(std::invalid_argument("Invalid number of labels, S_matrix simulation " + std::string(title)));
+		if (!m_fmin || !m_fmax || !m_fstep || m_fmin > m_fmax)
+			throw(std::invalid_argument("Invalid frequency sweep " + std::string(title)));
 
 		int first_index = index / 10;
 		int second_index = index % 10;
