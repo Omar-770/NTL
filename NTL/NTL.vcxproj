@@ -112,6 +112,12 @@
     <ClInclude Include="src\optimisation\optimiser.h" />
     <ClInclude Include="src\models\ntl.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\dir\NTL1.json" />
+    <None Include="..\dir\NTL2.json" />
+    <None Include="..\dir\setup1.json" />
+    <None Include="..\dir\setup2.json" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(QtMsBuild)\qt.targets" Condition="Exists('$(QtMsBuild)\qt.targets')" />
   <ImportGroup Label="ExtensionTargets">

@@ -3,6 +3,7 @@
 #include <vector>
 #include <nlopt.hpp>
 #include <omp.h>
+#include <nlohmann/json.hpp>
 #include "models/ntl.h"
 #include "common/helpers.h"
 
@@ -15,6 +16,10 @@ namespace NTL
 
 	struct opt_setup
 	{
+		opt_setup() {};
+		opt_setup(const nlohmann::json& j);
+		virtual ~opt_setup() = default;
+
 		int N{ 0 };
 		std::vector<double> lb{};
 		std::vector<double> ub{};
@@ -24,6 +29,8 @@ namespace NTL
 		double LCL_MAX{ 0 };
 		double accepted_error{ 0 };
 		int max_attempts{ 10'000 };
+
+		virtual nlohmann::json get_json() const;
 	};
 
 	struct opt_result

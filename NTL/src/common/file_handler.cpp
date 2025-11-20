@@ -59,6 +59,26 @@ namespace NTL::fh
         return NTL(j.at("Z0"), j.at("e_r"), j.at("d"), j.at("Cn"));
     }
 
+    json setup_to_json(const opt_setup& setup, const std::string& readme)
+    {
+        return setup.get_json();
+    }
+
+    std::unique_ptr<opt_setup> json_to_setup(const json& j)
+    {
+        if (j.at("json_type") != "setup")
+            throw(std::logic_error("Attempted to read a setup from a different json object"));
+
+        std::string type = j.at("setup_type");
+
+        if (type == "NTL_opt")
+            return std::make_unique<NTL_opt_setup>(j);
+        else if (type == "opt")
+            return std::make_unique<opt_setup>(j);
+        else
+            throw std::logic_error("Unknown setup type");
+    }
+
     std::fstream ntl_to_file(const NTL& ntl, const std::string& name, const std::string& readme)
     {
         return json_to_file(ntl_to_json(ntl, readme), name);
@@ -67,6 +87,16 @@ namespace NTL::fh
     NTL file_to_ntl(const std::string& name)
     {
         return json_to_ntl(file_to_json(name));
+    }
+
+    std::fstream setup_to_file(const opt_setup& setup, const std::string& name, const std::string& readme)
+    {
+        return json_to_file(setup_to_json(setup, readme), name);
+    }
+
+    std::unique_ptr<opt_setup> file_to_setup(const std::string& name)
+    {
+        return json_to_setup(file_to_json(name));
     }
 
 }
