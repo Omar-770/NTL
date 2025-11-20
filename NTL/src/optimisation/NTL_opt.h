@@ -1,4 +1,5 @@
 #pragma once
+
 #include "optimiser.h"
 #include <omp.h>
 #include <iostream>
@@ -10,7 +11,7 @@ namespace NTL
 	class NTL_opt;
 	struct NTL_opt_setup;
 	struct NTL_opt_result;
-
+	
 
 	struct NTL_opt_setup : public opt_setup
 	{

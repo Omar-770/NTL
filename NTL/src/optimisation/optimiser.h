@@ -14,6 +14,7 @@ namespace NTL
 	struct opt_result;
 	enum class console;
 
+
 	struct opt_setup
 	{
 		opt_setup() {};

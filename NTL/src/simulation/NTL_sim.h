@@ -6,14 +6,13 @@
 
 namespace NTL
 {
+	class NTL_sim;
+
 
 	class NTL_sim
 	{
 	public:
-		NTL_sim()
-		{
-
-		}
+		NTL_sim() {};
 
 		void set_f_sweep(double f_min, double f_max, double f_step = 1e7)
 		{

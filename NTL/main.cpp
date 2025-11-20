@@ -4,9 +4,11 @@
 #include <vector>
 #include "qt_plot.h"
 #include "models/ntl.h"
-#include "optimisation/optimiser.h"
+#include "models/wpd.h"
 #include "optimisation/NTL_opt.h"
+#include "optimisation/WPD_opt.h"
 #include "simulation/NTL_sim.h"
+#include "simulation/WPD_sim.h"
 #include "common/file_handler.h"
 
 namespace fh = NTL::fh;

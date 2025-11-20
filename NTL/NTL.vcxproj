@@ -103,6 +103,9 @@
     <ClCompile Include="src\optimisation\NTL_opt.cpp" />
     <ClCompile Include="src\optimisation\optimiser.cpp" />
     <ClCompile Include="src\models\ntl.cpp" />
+    <ClCompile Include="src\models\wpd.cpp" />
+    <ClCompile Include="src\simulation\WPD_sim.cpp" />
+    <ClCompile Include="src\optimisation\WPD_opt.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\common\file_handler.h" />
@@ -111,6 +114,9 @@
     <ClInclude Include="src\common\helpers.h" />
     <ClInclude Include="src\optimisation\optimiser.h" />
     <ClInclude Include="src\models\ntl.h" />
+    <ClInclude Include="src\models\wpd.h" />
+    <ClInclude Include="src\simulation\WPD_sim.h" />
+    <ClInclude Include="src\optimisation\WPD_opt.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\dir\NTL1.json" />

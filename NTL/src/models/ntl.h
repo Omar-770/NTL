@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <cmath>
 #include <complex>
 #include <Eigen/Dense>
@@ -13,12 +12,14 @@
 
 namespace NTL
 {
+	class NTL;
+	struct NTL_DATA;
+
 	using matrix2x2cd = Eigen::Matrix<std::complex<double>, 2, 2>;
 
-	constexpr double M_PI = 3.14159265358979311599796346854;
-	constexpr double M_C = 299792458;
+	inline constexpr double M_PI = 3.14159265358979311599796346854;
+	inline constexpr double M_C = 299792458;
 
-	class NTL;
 
 	double calculate_Z(double Z0, double d, const std::vector<double>& Cn, double z);
 	double calculate_Z(const NTL& ntl, const double z);
