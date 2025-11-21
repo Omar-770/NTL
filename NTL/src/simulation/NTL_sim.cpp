@@ -23,19 +23,20 @@ namespace NTL
 	QMainWindow* zin_wrapper::magnitude(const char* title)
 	{
 		if (m_Zl < 1e-6)
-			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation " + std::string(title)));
+			throw(std::invalid_argument("Invalid terminal impedances, Zin simulation " + std::string(title)));
 
 		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin > m_sim.m_fmax)
 			throw(std::invalid_argument("Invalid frequency sweep " + std::string(title)));
 
 		std::vector<std::pair<double, double>> Zin;
-
-		double points = (m_sim.m_fmax - m_sim.m_fmin) / m_sim.m_fstep + 1;
-		Zin.reserve(points);
+		std::vector<std::complex<double>> z = data();
+		Zin.reserve(z.size());
+		auto it = z.begin();
 
 		for (double f = m_sim.m_fmin; f < m_sim.m_fmax; f += m_sim.m_fstep)
 		{
-			Zin.emplace_back(f, std::abs(m_ntl.Zin(m_Zl, f)));
+			Zin.emplace_back(f, std::abs(*it));
+			it++;
 		}
 
 		QMainWindow* window = m_sim.m_plotter.plot(Zin, "Zin", title);
@@ -46,25 +47,37 @@ namespace NTL
 	QMainWindow* zin_wrapper::phase(enum class phase mode,const char* title)
 	{
 		if (m_Zl < 1e-6)
-			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation " + std::string(title)));
+			throw(std::invalid_argument("Invalid terminal impedances, Zin simulation " + std::string(title)));
 
 		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin > m_sim.m_fmax)
 			throw(std::invalid_argument("Invalid frequency sweep " + std::string(title)));
 
 		std::vector<std::pair<double, double>> Zin;
-
-		double points = (m_sim.m_fmax - m_sim.m_fmin) / m_sim.m_fstep + 1;
-		Zin.reserve(points);
+		std::vector<std::complex<double>> z = data();
+		Zin.reserve(z.size());
+		auto it = z.begin();
 
 		for (double f = m_sim.m_fmin; f < m_sim.m_fmax; f += m_sim.m_fstep)
 		{
-			std::complex<double> temp = m_ntl.Zin(m_Zl, f);
-			Zin.emplace_back(f, ((mode == phase::deg) ? 180 / M_PI : 1) * std::atan2(temp.imag(), temp.real()));
+			Zin.emplace_back(f, (mode == phase::deg ? 180/M_PI : 1 ) * std::atan2(it->imag(), it->real()));
+			it++;
 		}
 
 		QMainWindow* window = m_sim.m_plotter.plot(Zin, "Zin", title);
 		m_sim.m_windows.push_back(window);
 		return window;
+	}
+
+	std::vector<std::complex<double>> zin_wrapper::data()
+	{
+		std::vector<std::complex<double>> temp;
+		temp.reserve((m_sim.m_fmax - m_sim.m_fmin) / m_sim.m_fstep + 1);
+		for (double f = m_sim.m_fmin; f < m_sim.m_fmax; f += m_sim.m_fstep)
+		{
+			temp.emplace_back(m_ntl.Zin(m_Zl, f));
+		}
+
+		return temp;
 	}
 
 	QMainWindow* NTL_sim::w_h_profile(const NTL& ntl,const char* title, double step_size)

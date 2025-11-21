@@ -38,6 +38,8 @@ int main(int argc, char* argv[])
 		sim.s_matrix(ntl1, 11, setup1.Zs, setup1.Zl, { "50", "100", "150" });
 		sim.s_matrix(ntl2, 11, setup2.Zs, setup2.Zl, { "50", "25", "16.67" });
 
+		//sim.sparam(ntl, 50, {50, 100, 150}).S11().db();
+
 		sim.merge("NTL");
 		auto end_time = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed = end_time - start_time;

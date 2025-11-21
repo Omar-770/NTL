@@ -24,6 +24,7 @@ namespace NTL
 	private:
 		NTL_sim& m_sim;
 		NTL m_ntl; double m_Zl;
+		std::vector<std::complex<double>> data();
 		
 	};
 
