@@ -206,21 +206,6 @@ namespace NTL
 		return window;
 	}
 
-	std::vector<std::complex<double>> s_wrapper_2::data(double Zl)
-	{	
-		int first_index = m_index / 10;
-		int second_index = m_index % 10;
-	
-		std::vector<std::complex<double>> temp;
-		temp.reserve((m_sim.m_fmax - m_sim.m_fmin) / m_sim.m_fstep + 1);
-		for (double f = m_sim.m_fmin; f < m_sim.m_fmax; f += m_sim.m_fstep)
-		{
-			temp.emplace_back(m_ntl.S_matrix(f, m_Zs, Zl)(first_index - 1, second_index - 1));
-		}
-
-		return temp;
-	}
-
 	std::vector<QMainWindow*> s_wrapper_1::all(mag mode)
 	{
 		// 1. Guard Clauses (Safety First)
