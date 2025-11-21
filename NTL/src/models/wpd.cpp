@@ -7,7 +7,7 @@ namespace NTL
 	{
 		double G = 1 / R;
 
-		matrix3x3cd y2, y3;
+		matrix2x2cd y2, y3;
 		#pragma omp parallel sections
 		{
 			#pragma omp section
