@@ -33,12 +33,11 @@ int main(int argc, char* argv[])
 		sim.zin(ntl1, 50).magnitude();
 		sim.zin(ntl2, 50).magnitude();
 
-		sim.sparam(ntl1, setup1.Zs, setup1.Zl).all();
-		//sim.sparam(ntl1, setup1.Zs, setup1.Zl).S11().magnitude();
-		//sim.sparam(ntl1, setup1.Zs, setup1.Zl).S11().phase();
+		sim.sparam(ntl1, setup1.Zs, setup1.Zl).S11().magnitude();
+		sim.sparam(ntl1, setup1.Zs, setup1.Zl).S11().phase();
 	
-		//sim.sparam(ntl2, setup2.Zs, setup2.Zl).S11().magnitude();
-		//sim.sparam(ntl2, setup2.Zs, setup2.Zl).S11().phase();
+		sim.sparam(ntl2, setup2.Zs, setup2.Zl).S11().magnitude();
+		sim.sparam(ntl2, setup2.Zs, setup2.Zl).S11().phase();
 
 		sim.merge("NTL");
 		auto end_time = std::chrono::high_resolution_clock::now();
