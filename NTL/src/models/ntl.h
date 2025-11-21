@@ -35,6 +35,9 @@ namespace NTL
 		double f, int K = 50);
 	matrix2x2cd calculate_T_matrix(const NTL& ntl, double f, int K = 50);
 
+	std::pair<matrix2x2cd, std::vector<matrix2x2cd>> calculate_T_matrix_with_grad(
+		double Z0, double er, double d, const std::vector<double>& Cn, double f, int K = 50);
+
 	matrix2x2cd calculate_S_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn,
 		double f, double Zs, double Zl, int K = 50);
 	matrix2x2cd calculate_S_matrix(const NTL& ntl, double f, double Zs, double Zl, int K = 50);

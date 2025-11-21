@@ -101,6 +101,88 @@ namespace NTL
 		return calculate_T_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), f, K);
 	}
 
+	// In ntl.cpp
+
+	std::pair<matrix2x2cd, std::vector<matrix2x2cd>> calculate_T_matrix_with_grad(
+		double Z0, double er, double d, const std::vector<double>& Cn, double f, int K)
+	{
+		double _dz = d / K;
+		int N = Cn.size();
+
+		std::vector<matrix2x2cd> Ti(K);
+		std::vector<double> Zi(K);
+		std::vector<matrix2x2cd> dTi_dZ(K);
+
+		// Helper lambda for local T calculation
+		auto calc_Ti_local = [&](double Z, double len, double eps) {
+			matrix2x2cd T;
+			double e_eff = calculate_e_eff(Z, eps);
+			double theta = 2 * M_PI * f * std::sqrt(e_eff) * len / M_C;
+			double c = std::cos(theta);
+			double s = std::sin(theta);
+			T << std::complex<double>(c, 0), std::complex<double>(0, Z * s),
+				std::complex<double>(0, s / Z), std::complex<double>(c, 0);
+			return T;
+			};
+
+		// 1. Pre-calculate Section Matrices and Local Derivatives
+		// (Parallelizable loop)
+		#pragma omp parallel for
+		for (int i = 0; i < K; i++)
+		{
+			double z_pos = (double(i) + 0.5) * _dz;
+			Zi[i] = calculate_Z(Z0, d, Cn, z_pos);
+
+			Ti[i] = calc_Ti_local(Zi[i], _dz, er);
+
+			// Local finite difference for dTi/dZ (robust)
+			double h = Zi[i] * 1e-6;
+			matrix2x2cd Ti_plus = calc_Ti_local(Zi[i] + h, _dz, er);
+			dTi_dZ[i] = (Ti_plus - Ti[i]) / h;
+		}
+
+		// 2. Forward Sweep (Prefix Products)
+		std::vector<matrix2x2cd> L(K);
+		L[0] = matrix2x2cd::Identity();
+		for (int i = 1; i < K; i++)
+			L[i] = L[i - 1] * Ti[i - 1];
+
+		// 3. Backward Sweep (Suffix Products)
+		std::vector<matrix2x2cd> R(K);
+		R[K - 1] = matrix2x2cd::Identity();
+		for (int i = K - 2; i >= 0; i--)
+			R[i] = Ti[i + 1] * R[i + 1];
+
+		// 4. Calculate Total T
+		matrix2x2cd T_total = L[K - 1] * Ti[K - 1];
+
+		// 5. Assemble Gradients
+		std::vector<matrix2x2cd> grads(N, matrix2x2cd::Zero());
+
+		// d(Z)/dCn term helper
+		auto dZ_dCn = [&](int i, int n) {
+			double z_pos = (double(i) + 0.5) * _dz;
+			double term = 2 * M_PI * z_pos / d;
+			// Derivative of exp( sum(Cn * cos) ) is Z * cos
+			return Zi[i] * std::cos(term * n);
+			};
+
+		// Combine: dT/dCn = Sum_i ( L_i * dTi/dZ * R_i * dZ_i/dCn )
+		#pragma omp parallel for
+		for (int n = 0; n < N; n++)
+		{
+			for (int i = 0; i < K; i++)
+			{
+				// M_i = L[i] * dTi_dZ[i] * R[i]
+				// This matrix is "Sensitivity of Total T to Impedance Z_i"
+				matrix2x2cd M_i = L[i] * dTi_dZ[i] * R[i];
+				grads[n] += M_i * dZ_dCn(i, n);
+			}
+		}
+
+		return { T_total, grads };
+	}
+
 	matrix2x2cd calculate_S_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, double f, double Zs, double Zl, int K)
 	{
 		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, f, K);
