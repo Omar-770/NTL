@@ -16,7 +16,7 @@ namespace fh = NTL::fh;
 int main(int argc, char* argv[])
 {
 	try
-	{	
+	{
 		QApplication app(argc, argv);
 		auto start_time = std::chrono::high_resolution_clock::now();
 		auto setup1 = fh::file_to_setup<NTL::NTL_opt_setup>("setup1");
@@ -25,26 +25,26 @@ int main(int argc, char* argv[])
 		NTL::NTL ntl1 = fh::file_to_ntl("NTL1");
 		NTL::NTL ntl2 = fh::file_to_ntl("NTL2");
 
-		NTL::NTL_sim sim(1e7, 2.2e9, 1e6);
+		NTL::NTL_sim sim(1e6, 2.2e9, 1e6);
 
 		sim.w_h_profile(ntl1, "NTL1");
 		sim.w_h_profile(ntl2, "NTL2");
-		sim.z_profile(ntl1, "NTL1");
-		sim.z_profile(ntl2, "NTL2");
+
 		sim.zin(ntl1, 50).magnitude();
 		sim.zin(ntl2, 50).magnitude();
-		sim.zin(ntl1, 50).phase();
-		sim.zin(ntl2, 50).phase();
-		sim.s_matrix(ntl1, 11, setup1.Zs, setup1.Zl, { "50", "100", "150" });
-		sim.s_matrix(ntl2, 11, setup2.Zs, setup2.Zl, { "50", "25", "16.67" });
 
-		//sim.sparam(ntl, 50, {50, 100, 150}).S11().db();
+		sim.sparam(ntl1, setup1.Zs, setup1.Zl).all();
+		//sim.sparam(ntl1, setup1.Zs, setup1.Zl).S11().magnitude();
+		//sim.sparam(ntl1, setup1.Zs, setup1.Zl).S11().phase();
+	
+		//sim.sparam(ntl2, setup2.Zs, setup2.Zl).S11().magnitude();
+		//sim.sparam(ntl2, setup2.Zs, setup2.Zl).S11().phase();
 
 		sim.merge("NTL");
 		auto end_time = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed = end_time - start_time;
 		std::cout << "\n\n\n*** Execution finished in " << elapsed.count() / 60.0 << " minutes" << std::endl;
-		app.exec();		
+		app.exec();
 	}
 	catch (std::invalid_argument& e)
 	{

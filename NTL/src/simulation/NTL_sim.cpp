@@ -15,18 +15,13 @@ namespace NTL
 		return window;
 	}
 
-	zin_wrapper NTL_sim::zin(const NTL& ntl, double Zl)
-	{
-		return zin_wrapper(*this, ntl, Zl);
-	}
-
-	QMainWindow* zin_wrapper::magnitude(const char* title)
+	QMainWindow* zin_wrapper::magnitude(mag mode)
 	{
 		if (m_Zl < 1e-6)
-			throw(std::invalid_argument("Invalid terminal impedances, Zin simulation " + std::string(title)));
+			throw(std::invalid_argument("Invalid terminal impedances, Zin simulation " + std::string(m_title)));
 
-		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin > m_sim.m_fmax)
-			throw(std::invalid_argument("Invalid frequency sweep " + std::string(title)));
+		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin >= m_sim.m_fmax)
+			throw(std::invalid_argument("Invalid frequency sweep " + std::string(m_title)));
 
 		std::vector<std::pair<double, double>> Zin;
 		std::vector<std::complex<double>> z = data();
@@ -39,18 +34,21 @@ namespace NTL
 			it++;
 		}
 
-		QMainWindow* window = m_sim.m_plotter.plot(Zin, "Zin", title);
+		if (m_title[0] == '\0')
+			m_title = mode == mag::abs ? "|Zin(f)|" : "|Zin(f)| dB";
+
+		QMainWindow* window = m_sim.m_plotter.plot(Zin, "Zin", m_title);
 		m_sim.m_windows.push_back(window);
 		return window;
 	}
 
-	QMainWindow* zin_wrapper::phase(enum class phase mode,const char* title)
+	QMainWindow* zin_wrapper::phase(enum class phase mode)
 	{
 		if (m_Zl < 1e-6)
-			throw(std::invalid_argument("Invalid terminal impedances, Zin simulation " + std::string(title)));
+			throw(std::invalid_argument("Invalid terminal impedances, Zin simulation " + std::string(m_title)));
 
-		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin > m_sim.m_fmax)
-			throw(std::invalid_argument("Invalid frequency sweep " + std::string(title)));
+		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin >= m_sim.m_fmax)
+			throw(std::invalid_argument("Invalid frequency sweep " + std::string(m_title)));
 
 		std::vector<std::pair<double, double>> Zin;
 		std::vector<std::complex<double>> z = data();
@@ -63,7 +61,7 @@ namespace NTL
 			it++;
 		}
 
-		QMainWindow* window = m_sim.m_plotter.plot(Zin, "Zin", title);
+		QMainWindow* window = m_sim.m_plotter.plot(Zin, "Zin", m_title);
 		m_sim.m_windows.push_back(window);
 		return window;
 	}
@@ -88,205 +86,219 @@ namespace NTL
 		return window;
 	}
 
-	std::vector<QMainWindow*> NTL_sim::s_matrix(const NTL& ntl, double Zs, double Zl, const char* title)
+	QMainWindow* s_wrapper_2::magnitude(mag mode)
 	{
-		if (Zs < 1e-6 || Zl < 1e-6)
-			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation " + std::string(title)));
+		for(auto& z : m_Zl)
+			if (z < 1e-6)
+				throw(std::invalid_argument("Invalid terminal impedances, Zin simulation " + std::string(m_title)));
 
-		if (!m_fmin || !m_fmax || !m_fstep || m_fmin > m_fmax)
-			throw(std::invalid_argument("Invalid frequency sweep " + std::string(title)));
-
-		std::vector<std::pair<double, double>> S11, S12, S21, S22;
-
-		double points = (m_fmax - m_fmin) / m_fstep + 1;
-		S11.reserve(points);
-		S12.reserve(points);
-		S21.reserve(points);
-		S22.reserve(points);
-
-		for (double f = m_fmin; f < m_fmax; f += m_fstep)
-		{
-			matrix2x2cd S_matrix = ntl.S_matrix(f, Zs, Zl);
-
-			S11.emplace_back(f, 20 * std::log10(std::abs(S_matrix(0, 0))));
-			S12.emplace_back(f, 20 * std::log10(std::abs(S_matrix(0, 1))));
-			S21.emplace_back(f, 20 * std::log10(std::abs(S_matrix(1, 0))));
-			S22.emplace_back(f, 20 * std::log10(std::abs(S_matrix(1, 1))));
-		}
-
-		std::vector<QMainWindow*> window_vec;
-
-		window_vec.push_back(m_plotter.plot(S11, "S11", ("S11 " + std::string(title)).c_str()));
-		window_vec.push_back(m_plotter.plot(S12, "S12", ("S12 " + std::string(title)).c_str()));
-		window_vec.push_back(m_plotter.plot(S21, "S21", ("S21 " + std::string(title)).c_str()));
-		window_vec.push_back(m_plotter.plot(S22, "S22", ("S22 " + std::string(title)).c_str()));
-
-		for (int i = 0; i < window_vec.size(); i++)
-			m_windows.push_back(window_vec[i]);
-
-
-		return window_vec;
-	}
-
-	std::vector<QMainWindow*> NTL_sim::s_matrix(const NTL& ntl, double Zs, std::vector<double> Zl, std::vector<std::string> labels, const char* title)
-	{
-		if (Zs < 1e-6)
-			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation " + std::string(title)));
-		for (auto& Z : Zl)
-			if (Z < 1e-6)
-				throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation " + std::string(title)));
-		if (!labels.empty() && labels.size() != Zl.size())
-			throw(std::invalid_argument("Invalid number of labels, S_matrix simulation " + std::string(title)));
-		if (!m_fmin || !m_fmax || !m_fstep || m_fmin > m_fmax)
-			throw(std::invalid_argument("Invalid frequency sweep " + std::string(title)));
-
-		std::vector<std::vector<std::pair<double, double>>> S11, S12, S21, S22;
-		std::vector<const char*> S11_label, S12_label, S21_label, S22_label;
-		std::vector<std::string> temp;
-		S11.resize(Zl.size()); S11_label.resize(Zl.size()); temp.resize(Zl.size());
-		S12.resize(Zl.size()); S12_label.resize(Zl.size());
-		S21.resize(Zl.size()); S21_label.resize(Zl.size());
-		S22.resize(Zl.size()); S22_label.resize(Zl.size());
-
-		double points = (m_fmax - m_fmin) / m_fstep + 1;
-
-		for (int i = 0; i < Zl.size(); i++)
-		{
-			S11[i].reserve(points);
-			S12[i].reserve(points);
-			S21[i].reserve(points);
-			S22[i].reserve(points);
-
-			if (labels.empty())
-				temp[i] = "Z" + std::to_string(i + 1);
-			else
-				temp[i] = labels[i];
-			S11_label[i] = temp[i].c_str();
-			S12_label[i] = temp[i].c_str();
-			S21_label[i] = temp[i].c_str();
-			S22_label[i] = temp[i].c_str();
-		}
-
-		for (double f = m_fmin; f < m_fmax; f += m_fstep)
-		{
-			for (int i = 0; i < Zl.size(); i++)
-			{
-				matrix2x2cd S_matrix = ntl.S_matrix(f, Zs, Zl[i]);
-
-				S11[i].emplace_back(f, 20 * std::log10(std::abs(S_matrix(0, 0))));
-				S12[i].emplace_back(f, 20 * std::log10(std::abs(S_matrix(0, 1))));
-				S21[i].emplace_back(f, 20 * std::log10(std::abs(S_matrix(1, 0))));
-				S22[i].emplace_back(f, 20 * std::log10(std::abs(S_matrix(1, 1))));
-			}
-		}
-
-		std::vector<QMainWindow*> window_vec;
-
-		window_vec.push_back(m_plotter.plot(S11, S11_label, ("S11 " + std::string(title)).c_str()));
-		window_vec.push_back(m_plotter.plot(S12, S12_label, ("S12 " + std::string(title)).c_str()));
-		window_vec.push_back(m_plotter.plot(S21, S21_label, ("S21 " + std::string(title)).c_str()));
-		window_vec.push_back(m_plotter.plot(S22, S22_label, ("S22 " + std::string(title)).c_str()));
-
-		for (int i = 0; i < window_vec.size(); i++)
-			m_windows.push_back(window_vec[i]);
-
-		return window_vec;
-	}
-
-	QMainWindow* NTL_sim::s_matrix(const NTL& ntl, int index, double Zs, double Zl, const char* title)
-	{
-		if (Zs < 1e-6 || Zl < 1e-6)
-			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation" + std::string(title)));
-
-		int first_index = index / 10;
-		int second_index = index % 10;
-
-		if (first_index < 1 || first_index > 2 ||
-			second_index < 1 || second_index > 2)
-			throw(std::invalid_argument("Invalid indices, S_matrix simulation " + std::string(title)));
-		if (!m_fmin || !m_fmax || !m_fstep || m_fmin > m_fmax)
-			throw(std::invalid_argument("Invalid frequency sweep " + std::string(title)));
-
-		std::vector<std::pair<double, double>> S;
-
-		double points = (m_fmax - m_fmin) / m_fstep + 1;
-		S.reserve(points);
-
-		for (double f = m_fmin; f < m_fmax; f += m_fstep)
-		{
-			matrix2x2cd S_matrix = ntl.S_matrix(f, Zs, Zl);
-
-			S.emplace_back(f, 20 * std::log10(std::abs(S_matrix(first_index - 1, second_index - 1))));
-		}
-
-		std::string title_temp;
-		if (title[0] == '\0')
-		{
-			title_temp = "S" + std::to_string(first_index) + std::to_string(second_index);
-			title = title_temp.c_str();
-		}
-		QMainWindow* window = m_plotter.plot(S, ("S" + std::to_string(first_index) + std::to_string(second_index)).c_str(), title);
-		m_windows.push_back(window);
-		return window;
-	}
-
-	QMainWindow* NTL_sim::s_matrix(const NTL& ntl, int index, double Zs, std::vector<double> Zl, std::vector<std::string> labels, const char* title)
-	{
-		if (Zs < 1e-6)
-			throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation " + std::string(title)));
-		for (auto& Z : Zl)
-			if (Z < 1e-6)
-				throw(std::invalid_argument("Invalid terminal impedances, S_matrix simulation " + std::string(title)));
-		if (!labels.empty() && labels.size() != Zl.size())
-			throw(std::invalid_argument("Invalid number of labels, S_matrix simulation " + std::string(title)));
-		if (!m_fmin || !m_fmax || !m_fstep || m_fmin > m_fmax)
-			throw(std::invalid_argument("Invalid frequency sweep " + std::string(title)));
-
-		int first_index = index / 10;
-		int second_index = index % 10;
-
-		if (first_index < 1 || first_index > 2 ||
-			second_index < 1 || second_index > 2)
-			throw(std::invalid_argument("Invalid indices, S_matrix simulation " + std::string(title)));
+		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin >= m_sim.m_fmax)
+			throw(std::invalid_argument("Invalid frequency sweep " + std::string(m_title)));
 
 		std::vector<std::vector<std::pair<double, double>>> S;
+		std::vector<std::complex<double>> temp;
 		std::vector<const char*> S_label;
-		std::vector<std::string> temp;
-		S.resize(Zl.size()); S_label.resize(Zl.size()); temp.resize(Zl.size());
+		std::vector<std::string> _temp;
 
-		double points = (m_fmax - m_fmin) / m_fstep + 1;
+		double points = (m_sim.m_fmax - m_sim.m_fmin) / m_sim.m_fstep + 1;
+		
+		S.resize(m_Zl.size()); _temp.resize(m_Zl.size()); S_label.resize(m_Zl.size());
 
-		for (int i = 0; i < Zl.size(); i++)
+		for (int i = 0; i < m_Zl.size(); i++)
 		{
 			S[i].reserve(points);
 
-			if (labels.empty())
-				temp[i] = "Z" + std::to_string(i + 1);
+			if (m_labels.empty())
+				_temp[i] = "Z" + std::to_string(i + 1);
 			else
-				temp[i] = labels[i];
-			S_label[i] = temp[i].c_str();
+				_temp[i] = m_labels[i];
 
+			S_label[i] = _temp[i].c_str();			
 		}
 
-		for (double f = m_fmin; f < m_fmax; f += m_fstep)
+		temp.reserve(points);
+		
+		for (int i = 0; i < m_Zl.size(); i++)
 		{
-			for (int i = 0; i < Zl.size(); i++)
+			temp = data(m_Zl[i]);
+			auto it = temp.begin();
+			for (double f = m_sim.m_fmin; f < m_sim.m_fmax; f += m_sim.m_fstep)
 			{
-				matrix2x2cd S_matrix = ntl.S_matrix(f, Zs, Zl[i]);
-
-				S[i].emplace_back(f, 20 * std::log10(std::abs(S_matrix(first_index - 1, second_index - 1))));
+				 if(mode == mag::dB)
+					 S[i].emplace_back(f, 20 * std::log10(std::abs(*it)));
+				 else
+					 S[i].emplace_back(f, std::abs(*it));
+				 it++;
 			}
 		}
 
+		int first_index = m_index / 10;
+		int second_index = m_index % 10;
 		std::string title_temp;
-		if (title[0] == '\0')
+		if (m_title[0] == '\0')
 		{
 			title_temp = "S" + std::to_string(first_index) + std::to_string(second_index);
-			title = title_temp.c_str();
+			m_title = title_temp.c_str();
 		}
-		QMainWindow* window = m_plotter.plot(S, S_label, title);
 
-		m_windows.push_back(window);
+		QMainWindow* window = m_sim.m_plotter.plot(S, S_label, m_title);
+		m_sim.m_windows.push_back(window);
 		return window;
+	}
+
+	QMainWindow* s_wrapper_2::phase(enum class phase mode)
+	{
+		for (auto& z : m_Zl)
+			if (z < 1e-6)
+				throw(std::invalid_argument("Invalid terminal impedances, Zin simulation " + std::string(m_title)));
+
+		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin >= m_sim.m_fmax)
+			throw(std::invalid_argument("Invalid frequency sweep " + std::string(m_title)));
+
+		std::vector<std::vector<std::pair<double, double>>> S;
+		std::vector<std::complex<double>> temp;
+		std::vector<const char*> S_label;
+		std::vector<std::string> _temp;
+
+		double points = (m_sim.m_fmax - m_sim.m_fmin) / m_sim.m_fstep + 1;
+
+		S.resize(m_Zl.size()); _temp.resize(m_Zl.size()); S_label.resize(m_Zl.size());
+
+		for (int i = 0; i < m_Zl.size(); i++)
+		{
+			S[i].reserve(points);
+
+			if (m_labels.empty())
+				_temp[i] = "Z" + std::to_string(i + 1);
+			else
+				_temp[i] = m_labels[i];
+
+			S_label[i] = _temp[i].c_str();
+		}
+
+		temp.reserve(points);
+
+		for (int i = 0; i < m_Zl.size(); i++)
+		{
+			temp = data(m_Zl[i]);
+			auto it = temp.begin();
+			for (double f = m_sim.m_fmin; f < m_sim.m_fmax; f += m_sim.m_fstep)
+			{
+				if (mode == phase::rad)
+					S[i].emplace_back(f, std::atan2(it->imag(), it->real()));
+				else
+					S[i].emplace_back(f, 180 / M_PI * std::atan2(it->imag(), it->real()));
+				it++;
+			}
+		}
+
+		int first_index = m_index / 10;
+		int second_index = m_index % 10;
+		std::string title_temp;
+		if (m_title[0] == '\0')
+		{
+			title_temp = "S" + std::to_string(first_index) + std::to_string(second_index);
+			m_title = title_temp.c_str();
+		}
+
+		QMainWindow* window = m_sim.m_plotter.plot(S, S_label, m_title);
+		m_sim.m_windows.push_back(window);
+		return window;
+	}
+
+	std::vector<std::complex<double>> s_wrapper_2::data(double Zl)
+	{	
+		int first_index = m_index / 10;
+		int second_index = m_index % 10;
+	
+		std::vector<std::complex<double>> temp;
+		temp.reserve((m_sim.m_fmax - m_sim.m_fmin) / m_sim.m_fstep + 1);
+		for (double f = m_sim.m_fmin; f < m_sim.m_fmax; f += m_sim.m_fstep)
+		{
+			temp.emplace_back(m_ntl.S_matrix(f, m_Zs, Zl)(first_index - 1, second_index - 1));
+		}
+
+		return temp;
+	}
+
+	std::vector<QMainWindow*> s_wrapper_1::all(mag mode)
+	{
+		// 1. Guard Clauses (Safety First)
+		for (auto& z : m_Zl)
+			if (z < 1e-6)
+				throw(std::invalid_argument("Invalid terminal impedances, S-Param simulation"));
+
+		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin >= m_sim.m_fmax)
+			throw(std::invalid_argument("Invalid frequency sweep in S-Param simulation"));
+
+
+		std::vector<std::vector<std::pair<double, double>>> vS11, vS12, vS21, vS22;
+
+		size_t num_loads = m_Zl.size();
+		double points = (m_sim.m_fmax - m_sim.m_fmin) / m_sim.m_fstep + 1;
+
+		vS11.resize(num_loads); vS12.resize(num_loads);
+		vS21.resize(num_loads); vS22.resize(num_loads);
+
+		std::vector<std::string> _str_labels(num_loads);
+		std::vector<const char*> char_labels(num_loads);
+
+		for (size_t i = 0; i < num_loads; i++)
+		{
+			vS11[i].reserve(points); vS12[i].reserve(points);
+			vS21[i].reserve(points); vS22[i].reserve(points);
+
+			if (m_labels.empty())
+				_str_labels[i] = "Z" + std::to_string(i + 1);
+			else
+				_str_labels[i] = m_labels[i];
+
+			char_labels[i] = _str_labels[i].c_str();
+		}
+
+		for (size_t i = 0; i < num_loads; i++)
+		{
+			double Zl_current = m_Zl[i];
+
+			for (double f = m_sim.m_fmin; f < m_sim.m_fmax; f += m_sim.m_fstep)
+			{
+				auto S = m_ntl.S_matrix(f, m_Zs, Zl_current);
+
+				double v11 = std::abs(S(0, 0));
+				double v12 = std::abs(S(0, 1));
+				double v21 = std::abs(S(1, 0));
+				double v22 = std::abs(S(1, 1));
+
+				if (mode == mag::dB)
+				{
+					v11 = 20 * std::log10(v11);
+					v12 = 20 * std::log10(v12);
+					v21 = 20 * std::log10(v21);
+					v22 = 20 * std::log10(v22);
+				}
+
+				vS11[i].emplace_back(f, v11);
+				vS12[i].emplace_back(f, v12);
+				vS21[i].emplace_back(f, v21);
+				vS22[i].emplace_back(f, v22);
+			}
+		}
+
+		std::vector<QMainWindow*> windows;
+		QMainWindow* window;
+		window = m_sim.m_plotter.plot(vS11, char_labels, "S11");
+		windows.push_back(window);
+		m_sim.m_windows.push_back(window);
+		window = m_sim.m_plotter.plot(vS12, char_labels, "S12");
+		windows.push_back(window);
+		m_sim.m_windows.push_back(window);
+		window = m_sim.m_plotter.plot(vS21, char_labels, "S21");
+		m_sim.m_windows.push_back(window);
+		windows.push_back(window);
+		window = m_sim.m_plotter.plot(vS22, char_labels, "S22");
+		m_sim.m_windows.push_back(window);
+		windows.push_back(window);
+
+		return windows;
 	}
 }

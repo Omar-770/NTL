@@ -8,25 +8,68 @@ namespace NTL
 {
 	class NTL_sim;
 	struct zin_wrapper;
+	struct s_wrapper_1;
+	struct s_wrapper_2;
 
 	enum class phase
 	{
 		rad, deg
 	};
+
+	enum class mag
+	{
+		abs, dB
+	};
 	
 	struct zin_wrapper
 	{
-		zin_wrapper(NTL_sim& sim, const NTL& ntl, double Zl)
-			: m_sim(sim), m_ntl(ntl), m_Zl(Zl) {};
-		QMainWindow* magnitude(const char* title = "Impedance |Zin(f)|");
-		QMainWindow* phase(enum class phase mode = phase::deg, const char* title = "Impedance phase <Zin(f)");
+		zin_wrapper(NTL_sim& sim, const NTL& ntl, double Zl, const char* title)
+			: m_sim(sim), m_ntl(ntl), m_Zl(Zl), m_title(title) {};
+		QMainWindow* magnitude(mag mode = mag::abs);
+		QMainWindow* phase(enum class phase mode = phase::deg);
 
 	private:
 		NTL_sim& m_sim;
-		NTL m_ntl; double m_Zl;
+		const NTL& m_ntl; double m_Zl;
+		const char* m_title;
 		std::vector<std::complex<double>> data();
 		
 	};
+
+	struct s_wrapper_2
+	{
+		s_wrapper_2(NTL_sim& sim, const NTL& ntl, double Zs, const std::vector<double>& Zl, 
+			const std::vector<std::string>& labels, const char* title, int index)
+			: m_sim(sim), m_ntl(ntl), m_Zs(Zs), m_Zl(Zl), m_labels(labels), m_title(title), m_index(index) {
+		};
+
+		QMainWindow* magnitude(mag mode = mag::dB);
+		QMainWindow* phase(enum class phase mode = phase::deg);
+	private:
+		NTL_sim& m_sim;
+		const NTL& m_ntl; double m_Zs; const std::vector<double>& m_Zl;
+		const std::vector<std::string>& m_labels; const char* m_title;
+		int m_index;
+		std::vector<std::complex<double>> data(double Zl);
+	};
+
+	struct s_wrapper_1
+	{
+		s_wrapper_1(NTL_sim& sim, const NTL& ntl, double Zs, const std::vector<double>& Zl,
+			const std::vector<std::string>& labels, const char* title)
+			: m_sim(sim), m_ntl(ntl), m_Zs(Zs), m_Zl(Zl), m_labels(labels), m_title(title) {};
+
+		s_wrapper_2 S11() { return s_wrapper_2(m_sim, m_ntl, m_Zs, m_Zl, m_labels, m_title, 11); }
+		s_wrapper_2 S12() { return s_wrapper_2(m_sim, m_ntl, m_Zs, m_Zl, m_labels, m_title, 12); }
+		s_wrapper_2 S21() { return s_wrapper_2(m_sim, m_ntl, m_Zs, m_Zl, m_labels, m_title, 21); }
+		s_wrapper_2 S22() { return s_wrapper_2(m_sim, m_ntl, m_Zs, m_Zl, m_labels, m_title, 22); }
+		std::vector<QMainWindow*> all(mag mode = mag::dB);
+	private:
+		NTL_sim& m_sim;
+		const NTL& m_ntl; double m_Zs; const std::vector<double>& m_Zl;
+		const std::vector<std::string>& m_labels; const char* m_title;
+	};
+
 
 	class NTL_sim
 	{
@@ -46,23 +89,19 @@ namespace NTL
 		QMainWindow* merge(const char* title = "NTL_sim");
 
 		QMainWindow* z_profile(const NTL& ntl, const char* title = "Impedance Z(z)", double step_size = 1e-4);
-		zin_wrapper zin(const NTL& ntl, double Zl);
+		zin_wrapper zin(const NTL& ntl, double Zl, const char* title = "") { return zin_wrapper(*this, ntl, Zl, title); }
 
 		QMainWindow* w_h_profile(const NTL& ntl, const char* title = "W/H(z)", double step_size = 1e-4);
 
-		std::vector<QMainWindow*> s_matrix(const NTL& ntl, double Zs, double Zl, const char* title = "");
-		std::vector<QMainWindow*> s_matrix(const NTL& ntl, double Zs, std::vector<double> Zl,
-			std::vector<std::string> labels = {}, const char* title = "");
-
-		QMainWindow* s_matrix(const NTL& ntl, int index, double Zs, double Zl, const char* title = "");
-		QMainWindow* s_matrix(const NTL& ntl
-			, int index, double Zs, std::vector<double> Zl,
-			std::vector<std::string> labels = {}, const char* title = "");
+		s_wrapper_1 sparam(const NTL& ntl, double Zs, const std::vector<double>& Zl,
+			std::vector<std::string> labels = {}, const char* title = "") { return s_wrapper_1(*this, ntl, Zs, Zl, labels, title); }
 
 		std::vector<QMainWindow*> get_windows() const { return m_windows; }
 
-
+		
 		friend struct zin_wrapper;
+		friend struct s_wrapper_1;
+		friend struct s_wrapper_2;
 
 	private:
 		double m_fmin;
