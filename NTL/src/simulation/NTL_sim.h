@@ -7,7 +7,25 @@
 namespace NTL
 {
 	class NTL_sim;
+	struct zin_wrapper;
 
+	enum class phase
+	{
+		rad, deg
+	};
+	
+	struct zin_wrapper
+	{
+		zin_wrapper(NTL_sim& sim, const NTL& ntl, double Zl)
+			: m_sim(sim), m_ntl(ntl), m_Zl(Zl) {};
+		QMainWindow* magnitude(const char* title = "Impedance |Zin(f)|");
+		QMainWindow* phase(enum class phase mode = phase::deg, const char* title = "Impedance phase <Zin(f)");
+
+	private:
+		NTL_sim& m_sim;
+		NTL m_ntl; double m_Zl;
+		
+	};
 
 	class NTL_sim
 	{
@@ -27,6 +45,8 @@ namespace NTL
 		QMainWindow* merge(const char* title = "NTL_sim");
 
 		QMainWindow* z_profile(const NTL& ntl, const char* title = "Impedance Z(z)", double step_size = 1e-4);
+		zin_wrapper zin(const NTL& ntl, double Zl);
+
 		QMainWindow* w_h_profile(const NTL& ntl, const char* title = "W/H(z)", double step_size = 1e-4);
 
 		std::vector<QMainWindow*> s_matrix(const NTL& ntl, double Zs, double Zl, const char* title = "");
@@ -39,6 +59,9 @@ namespace NTL
 			std::vector<std::string> labels = {}, const char* title = "");
 
 		std::vector<QMainWindow*> get_windows() const { return m_windows; }
+
+
+		friend struct zin_wrapper;
 
 	private:
 		double m_fmin;

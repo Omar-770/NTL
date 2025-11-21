@@ -27,12 +27,16 @@ int main(int argc, char* argv[])
 
 		NTL::NTL_sim sim(1e7, 2.2e9, 1e6);
 
-		sim.w_h_profile(ntl1);
-		sim.w_h_profile(ntl2);
-		sim.z_profile(ntl1);
-		sim.z_profile(ntl2);
-		sim.s_matrix(ntl1, 11, setup1.Zs, setup1.Zl);
-		sim.s_matrix(ntl2, 11, setup2.Zs, setup2.Zl);
+		sim.w_h_profile(ntl1, "NTL1");
+		sim.w_h_profile(ntl2, "NTL2");
+		sim.z_profile(ntl1, "NTL1");
+		sim.z_profile(ntl2, "NTL2");
+		sim.zin(ntl1, 50).magnitude();
+		sim.zin(ntl2, 50).magnitude();
+		sim.zin(ntl1, 50).phase();
+		sim.zin(ntl2, 50).phase();
+		sim.s_matrix(ntl1, 11, setup1.Zs, setup1.Zl, { "50", "100", "150" });
+		sim.s_matrix(ntl2, 11, setup2.Zs, setup2.Zl, { "50", "25", "16.67" });
 
 		sim.merge("NTL");
 		auto end_time = std::chrono::high_resolution_clock::now();
