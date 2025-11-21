@@ -25,23 +25,23 @@ namespace NTL
 	double calculate_Z(const NTL& ntl, double z);
 	double calculate_Z(const double* Cn, const size_t& n, const double& Z0, const double& d, const double& z); //for nlopt
 
-	std::complex<double> calculate_Zin(double Z0, double e_r, double d, const std::vector<double>& Cn, double Zl, double f, double K = 50);
-	std::complex<double> calculate_Zin(const NTL& ntl, double Zl, double f, double K = 50);
+	std::complex<double> calculate_Zin(double Z0, double e_r, double d, const std::vector<double>& Cn, double Zl, double f, int K = 50);
+	std::complex<double> calculate_Zin(const NTL& ntl, double Zl, double f, int K = 50);
 
 	double calculate_W_H(double z, double e_r);
 	double calculate_e_eff(double z, double e_r);
 
 	matrix2x2cd calculate_T_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn,
-		double f, double K = 50);
-	matrix2x2cd calculate_T_matrix(const NTL& ntl, double f, double K = 50);
+		double f, int K = 50);
+	matrix2x2cd calculate_T_matrix(const NTL& ntl, double f, int K = 50);
 
 	matrix2x2cd calculate_S_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn,
-		double f, double Zs, double Zl, double K = 50);
-	matrix2x2cd calculate_S_matrix(const NTL& ntl, double f, double Zs, double Zl, double K = 50);
+		double f, double Zs, double Zl, int K = 50);
+	matrix2x2cd calculate_S_matrix(const NTL& ntl, double f, double Zs, double Zl, int K = 50);
 
 	matrix2x2cd calculate_Y_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn,
-		double f, double K = 50);
-	matrix2x2cd calculate_Y_matrix(const NTL& ntl, double f, double K = 50);
+		double f, int K = 50);
+	matrix2x2cd calculate_Y_matrix(const NTL& ntl, double f, int K = 50);
 
 
 	struct NTL_DATA

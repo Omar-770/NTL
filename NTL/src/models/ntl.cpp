@@ -29,7 +29,7 @@ namespace NTL
 		return Z0 * std::exp(Z);
 	}
 
-	std::complex<double> calculate_Zin(double Z0, double e_r, double d, const std::vector<double>& Cn, double Zl, double f, double K)
+	std::complex<double> calculate_Zin(double Z0, double e_r, double d, const std::vector<double>& Cn, double Zl, double f, int K)
 	{
 		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, f, K);
 
@@ -39,7 +39,7 @@ namespace NTL
 		return Zin;
 	}
 
-	std::complex<double> calculate_Zin(const NTL& ntl, double Zl, double f, double K)
+	std::complex<double> calculate_Zin(const NTL& ntl, double Zl, double f, int K)
 	{
 		return calculate_Zin(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), Zl, f, K);
 	}
@@ -69,7 +69,7 @@ namespace NTL
 	}
 
 	matrix2x2cd calculate_T_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn,
-		double f, double K)
+		double f, int K)
 	{
 		double _dz = d / K;
 		matrix2x2cd T = matrix2x2cd::Identity();
@@ -96,12 +96,12 @@ namespace NTL
 		return T;
 	}
 
-	matrix2x2cd calculate_T_matrix(const NTL& ntl, double f, double K)
+	matrix2x2cd calculate_T_matrix(const NTL& ntl, double f, int K)
 	{
 		return calculate_T_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), f, K);
 	}
 
-	matrix2x2cd calculate_S_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, double f, double Zs, double Zl, double K)
+	matrix2x2cd calculate_S_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, double f, double Zs, double Zl, int K)
 	{
 		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, f, K);
 		std::complex<double> A = T(0, 0);
@@ -128,13 +128,13 @@ namespace NTL
 		return S;
 	}
 
-	matrix2x2cd calculate_S_matrix(const NTL& ntl, double f, double Zs, double Zl, double K)
+	matrix2x2cd calculate_S_matrix(const NTL& ntl, double f, double Zs, double Zl, int K)
 	{
 		return calculate_S_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), f, Zs, Zl, K);
 	}
 
 	matrix2x2cd calculate_Y_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn,
-		double f, double K)
+		double f, int K)
 	{
 		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, f, K);
 		std::complex<double> A = T(0, 0);
@@ -157,7 +157,7 @@ namespace NTL
 		return Y;
 	}
 
-	matrix2x2cd calculate_Y_matrix(const NTL& ntl, double f, double K)
+	matrix2x2cd calculate_Y_matrix(const NTL& ntl, double f, int K)
 	{
 		return calculate_Y_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), f, K);
 	}
