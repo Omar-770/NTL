@@ -12,8 +12,7 @@ namespace NTL
 		GBL_MAX = j.at("GBL_MAX").get<double>();
 		LCL_MAX = j.at("LCL_MAX").get<double>();
 		accepted_error = j.at("accepted_error").get<double>();
-		max_attempts = j.at("max_attempts").get<double>();
-			
+		max_attempts = j.at("max_attempts").get<double>();			
 	}
 
 	nlohmann::json opt_setup::get_json() const
@@ -29,7 +28,7 @@ namespace NTL
 			{ "GBL_MAX", GBL_MAX },
 			{ "LCL_MAX", LCL_MAX },
 			{ "accepted_error", accepted_error },
-			{ "max_attempts", max_attempts }
+			{ "max_attempts", max_attempts },
 		};
 	}
 

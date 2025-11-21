@@ -194,26 +194,96 @@ namespace NTL
 
 	double NTL_opt::objective_with_fd_gradient(const std::vector<double>& Cn, std::vector<double>& grad, void* data) const
 	{
+		double sum_squares = 0.0;
 
-		const double f_base = min_objective(Cn);
-
+		// Reset gradient vector if provided
 		if (!grad.empty())
+			std::fill(grad.begin(), grad.end(), 0.0);
+
+		// Loop over frequencies
+		for (int i = 0; i < m_freqs.size(); i++)
 		{
-			const double h = 1e-8;
-			int N = Cn.size();
+			double f = m_freqs[i];
+			double Zl = m_Zl[i];
 
-#pragma omp parallel for
-			for (int i = 0; i < N; ++i)
+			// --- CALL STANDALONE FUNCTION ---
+			auto [T, T_grads] = calculate_T_matrix_with_grad(m_Z0, m_er, m_d, Cn, f, m_K);
+
+			std::complex<double> A = T(0, 0), B = T(0, 1), C = T(1, 0), D = T(1, 1);
+
+			// Calculate Zin and Gamma
+			std::complex<double> Zin_num = A * Zl + B;
+			std::complex<double> Zin_den = C * Zl + D;
+			std::complex<double> Zin = Zin_num / Zin_den;
+			std::complex<double> Gamma = (Zin - m_Zs) / (Zin + m_Zs);
+
+			sum_squares += std::norm(Gamma);
+
+			// Compute Gradients
+			if (!grad.empty())
 			{
-				std::vector<double> Cn_nudged = Cn;
-				Cn_nudged[i] += h;
+				for (int n = 0; n < Cn.size(); n++)
+				{
+					// Derivatives of ABCD
+					std::complex<double> dA = T_grads[n](0, 0);
+					std::complex<double> dB = T_grads[n](0, 1);
+					std::complex<double> dC = T_grads[n](1, 0);
+					std::complex<double> dD = T_grads[n](1, 1);
 
-				double f_nudged = min_objective(Cn_nudged);
+					// d(Zin)/dCn (Quotient Rule)
+					std::complex<double> dNum = dA * Zl + dB;
+					std::complex<double> dDen = dC * Zl + dD;
+					std::complex<double> dZin = (dNum * Zin_den - Zin_num * dDen) / (Zin_den * Zin_den);
 
-				grad[i] = (f_nudged - f_base) / h;
+					// d(Gamma)/dCn
+					std::complex<double> dGamma = (2.0 * m_Zs * dZin) / std::pow(Zin + m_Zs, 2);
+
+					// Accumulate partial gradient: d(|Gamma|^2) = 2 * Real(Gamma * conj(dGamma))
+					grad[n] += 4.0 * std::norm(Gamma) * std::real(Gamma * std::conj(dGamma));
+				}
 			}
 		}
 
-		return f_base;
+		// --- MATHEMATICAL NOTE CORRECTION ---
+		double objective_val = std::sqrt(sum_squares);
+
+		if (!grad.empty() && objective_val > 1e-12)
+		{
+			// Chain rule scaling for sqrt()
+			for (auto& g : grad)
+				g *= (0.5 / objective_val);
+		}
+		else if (!grad.empty())
+		{
+			// Handle zero case (perfect match) to avoid division by zero
+			std::fill(grad.begin(), grad.end(), 0.0);
+		}
+
+		return objective_val;
 	}
+
+	//double NTL_opt::objective_with_fd_gradient(const std::vector<double>& Cn, std::vector<double>& grad, void* data) const
+	//{
+
+	//	const double f_base = min_objective(Cn);
+
+	//	if (!grad.empty())
+	//	{
+	//		const double h = 1e-8;
+	//		int N = Cn.size();
+
+	//		#pragma omp parallel for
+	//		for (int i = 0; i < N; ++i)
+	//		{
+	//			std::vector<double> Cn_nudged = Cn;
+	//			Cn_nudged[i] += h;
+
+	//			double f_nudged = min_objective(Cn_nudged);
+
+	//			grad[i] = (f_nudged - f_base) / h;
+	//		}
+	//	}
+
+	//	return f_base;
+	//}
 }

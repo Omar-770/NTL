@@ -20,25 +20,19 @@ int main(int argc, char* argv[])
 		QApplication app(argc, argv);
 		auto start_time = std::chrono::high_resolution_clock::now();
 		auto setup1 = fh::file_to_setup<NTL::NTL_opt_setup>("setup1");
-		auto setup2 = fh::file_to_setup<NTL::NTL_opt_setup>("setup2");
+		setup1.d = 80e-3;
+		setup1.Zl = { 100 };
 
-		NTL::NTL ntl1 = fh::file_to_ntl("NTL1");
-		NTL::NTL ntl2 = fh::file_to_ntl("NTL2");
+		NTL::NTL_opt opt(setup1);
+		
+		NTL::NTL ntl = opt.optimise(NTL::console::active).ntl;
 
 		NTL::NTL_sim sim(1e6, 2.2e9, 1e6);
 
-		sim.w_h_profile(ntl1, "NTL1");
-		sim.w_h_profile(ntl2, "NTL2");
-
-		sim.zin(ntl1, 50).magnitude();
-		sim.zin(ntl2, 50).magnitude();
-
-		sim.sparam(ntl1, setup1.Zs, setup1.Zl).S11().magnitude();
-		sim.sparam(ntl1, setup1.Zs, setup1.Zl).S11().phase();
-	
-		sim.sparam(ntl2, setup2.Zs, setup2.Zl).S11().magnitude();
-		sim.sparam(ntl2, setup2.Zs, setup2.Zl).S11().phase();
-
+		sim.w_h_profile(ntl);
+		sim.z_profile(ntl);
+		sim.sparam(ntl, setup1.Zs, setup1.Zl).S11().magnitude();
+		
 		sim.merge("NTL");
 		auto end_time = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed = end_time - start_time;
