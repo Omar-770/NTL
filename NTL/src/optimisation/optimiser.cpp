@@ -193,7 +193,7 @@ namespace NTL
 		}
 
 
-		return  { overall_best_Cn, overall_best_error };
+		return  { overall_best_Cn, overall_best_error, attempt };
 	}
 
 }

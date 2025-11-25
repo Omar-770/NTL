@@ -23,14 +23,13 @@ int main(int argc, char* argv[])
 		setup1.d = 80e-3;
 		setup1.Zl = { 100 };
 
-		NTL::NTL_opt opt(setup1);
-		
-		NTL::NTL ntl = opt.optimise(NTL::console::active).ntl;
-
+		NTL::NTL_opt opt(setup1);		
+		NTL::NTL ntl = opt.optimise().ntl;
 		NTL::NTL_sim sim(1e6, 2.2e9, 1e6);
 
 		sim.w_h_profile(ntl);
-		sim.z_profile(ntl);
+		sim.zin(ntl, 50).magnitude();
+		sim.zin(ntl, 50).phase();
 		sim.sparam(ntl, setup1.Zs, setup1.Zl).S11().magnitude();
 		
 		sim.merge("NTL");

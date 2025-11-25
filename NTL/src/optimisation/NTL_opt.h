@@ -42,10 +42,10 @@ namespace NTL
 	public:
 		NTL_opt(const NTL_opt_setup& setup);
 
-		NTL_opt_result optimise(console mode = console::inactive);
+		NTL_opt_result optimise(console mode = console::active);
 
-		NTL_opt_result optimise_d(double resolution, console mode = console::inactive);
-		NTL_opt_result optimise_d(console mode = console::inactive);
+		NTL_opt_result optimise_d(double resolution, console mode = console::active);
+		NTL_opt_result optimise_d(console mode = console::active);
 		
 
 	private:

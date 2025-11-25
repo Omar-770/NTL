@@ -38,6 +38,7 @@ namespace NTL
 	{
 		std::vector<double> optimised_cn;
 		double final_error;
+		int number_of_attempts;
 	};
 
 	enum class console

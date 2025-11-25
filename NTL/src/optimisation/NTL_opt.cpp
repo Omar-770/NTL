@@ -4,7 +4,7 @@ namespace NTL
 {
 	NTL_opt_setup::NTL_opt_setup(const nlohmann::json& j) : opt_setup(j)
 	{
-		if(j.at("setup_type") != "NTL_opt")
+		if (j.at("setup_type") != "NTL_opt")
 			throw(std::logic_error("Attempted to read a setup from a different json object"));
 
 		Z0 = j.at("Z0").get<double>();
@@ -156,17 +156,27 @@ namespace NTL
 
 		double sum_squares{};
 
-		for (int i = 0; i < m_freqs.size(); i++)
+		#pragma omp parallel
 		{
-			double f = m_freqs[i];
-			double Zl = m_Zl[i];
+			double thread_sum_squares{};
+			#pragma omp for nowait
+			for (int i = 0; i < m_freqs.size(); i++)
+			{
+				double f = m_freqs[i];
+				double Zl = m_Zl[i];
 
-			matrix2x2cd T = calculate_T_matrix(m_Z0, m_er, m_d, Cn, f, m_K);
+				matrix2x2cd T = calculate_T_matrix(m_Z0, m_er, m_d, Cn, f, m_K);
 
-			std::complex<double> a = T(0, 0), b = T(0, 1), c = T(1, 0), d = T(1, 1);
-			std::complex<double> Zin = (Zl * a + b) / (Zl * c + d);
-			std::complex<double> gamma = (Zin - m_Zs) / (Zin + m_Zs);
-			sum_squares += std::pow(std::norm(gamma), 2);
+				std::complex<double> a = T(0, 0), b = T(0, 1), c = T(1, 0), d = T(1, 1);
+				std::complex<double> Zin = (Zl * a + b) / (Zl * c + d);
+				std::complex<double> gamma = (Zin - m_Zs) / (Zin + m_Zs);
+				thread_sum_squares += std::pow(std::norm(gamma), 2);
+			}
+
+			#pragma omp critical
+			{
+				sum_squares += thread_sum_squares;
+			}
 		}
 
 		return std::sqrt(sum_squares);
@@ -194,73 +204,160 @@ namespace NTL
 
 	double NTL_opt::objective_with_fd_gradient(const std::vector<double>& Cn, std::vector<double>& grad, void* data) const
 	{
-		double sum_squares = 0.0;
+		double total_sum_squares{};
+		int F = m_freqs.size();
+		int N = Cn.size();
 
-		// Reset gradient vector if provided
-		if (!grad.empty())
-			std::fill(grad.begin(), grad.end(), 0.0);
-
-		// Loop over frequencies
-		for (int i = 0; i < m_freqs.size(); i++)
+		#pragma omp parallel
 		{
-			double f = m_freqs[i];
-			double Zl = m_Zl[i];
+			double thread_sum_squares{};
+			std::vector<double> thread_grad(N, 0);
 
-			// --- CALL STANDALONE FUNCTION ---
-			auto [T, T_grads] = calculate_T_matrix_with_grad(m_Z0, m_er, m_d, Cn, f, m_K);
-
-			std::complex<double> A = T(0, 0), B = T(0, 1), C = T(1, 0), D = T(1, 1);
-
-			// Calculate Zin and Gamma
-			std::complex<double> Zin_num = A * Zl + B;
-			std::complex<double> Zin_den = C * Zl + D;
-			std::complex<double> Zin = Zin_num / Zin_den;
-			std::complex<double> Gamma = (Zin - m_Zs) / (Zin + m_Zs);
-
-			sum_squares += std::norm(Gamma);
-
-			// Compute Gradients
-			if (!grad.empty())
+			#pragma omp for nowait
+			for (int i = 0; i < F; i++)
 			{
-				for (int n = 0; n < Cn.size(); n++)
+				double f = m_freqs[i];
+				double Zl = m_Zl[i];
+
+				auto [T, dT] = calculate_T_matrix_with_grad(m_Z0, m_er, m_d, Cn, f, m_K);
+
+				std::complex<double> A = T(0, 0);
+				std::complex<double> B = T(0, 1);
+				std::complex<double> C = T(1, 0);
+				std::complex<double> D = T(1, 1);
+
+				std::complex<double> num = A * Zl + B;
+				std::complex<double> den = C * Zl + D;
+
+				std::complex<double> Zin = num / den;
+				std::complex<double> Gamma = (Zin - m_Zs) / (Zin + m_Zs);
+
+				thread_sum_squares += std::pow(std::norm(Gamma), 2);
+				std::complex<double> dGamma;
+
+				for (int n = 0; n < N; n++)
 				{
-					// Derivatives of ABCD
-					std::complex<double> dA = T_grads[n](0, 0);
-					std::complex<double> dB = T_grads[n](0, 1);
-					std::complex<double> dC = T_grads[n](1, 0);
-					std::complex<double> dD = T_grads[n](1, 1);
+					std::complex<double> dA = dT[n](0, 0);
+					std::complex<double> dB = dT[n](0, 1);
+					std::complex<double> dC = dT[n](1, 0);
+					std::complex<double> dD = dT[n](1, 1);
 
-					// d(Zin)/dCn (Quotient Rule)
-					std::complex<double> dNum = dA * Zl + dB;
-					std::complex<double> dDen = dC * Zl + dD;
-					std::complex<double> dZin = (dNum * Zin_den - Zin_num * dDen) / (Zin_den * Zin_den);
+					dGamma += Zl * dA + dB - Zin * (Zl * dC + dD);
+					dGamma *= 2 * m_Zs / (den * std::pow(Zin + m_Zs, 2));
 
-					// d(Gamma)/dCn
-					std::complex<double> dGamma = (2.0 * m_Zs * dZin) / std::pow(Zin + m_Zs, 2);
+					thread_grad[n] += 4.0 * std::norm(Gamma) * std::real(Gamma * std::conj(dGamma));
 
-					// Accumulate partial gradient: d(|Gamma|^2) = 2 * Real(Gamma * conj(dGamma))
-					grad[n] += 4.0 * std::norm(Gamma) * std::real(Gamma * std::conj(dGamma));
 				}
 			}
+
+			#pragma omp critical
+			{
+				total_sum_squares += thread_sum_squares;
+				if(!grad.empty())
+					for (int n = 0; n < N; n++)
+						grad[n] += thread_grad[n];
+			}
+
 		}
 
-		// --- MATHEMATICAL NOTE CORRECTION ---
-		double objective_val = std::sqrt(sum_squares);
-
-		if (!grad.empty() && objective_val > 1e-12)
-		{
-			// Chain rule scaling for sqrt()
-			for (auto& g : grad)
-				g *= (0.5 / objective_val);
-		}
-		else if (!grad.empty())
-		{
-			// Handle zero case (perfect match) to avoid division by zero
-			std::fill(grad.begin(), grad.end(), 0.0);
-		}
-
-		return objective_val;
+		return total_sum_squares;
 	}
+
+	//double NTL_opt::objective_with_fd_gradient(const std::vector<double>& Cn, std::vector<double>& grad, void* data) const
+	//{
+	//	// 1. Prepare global accumulators
+	//	double total_sum_squares = 0.0;
+	//	bool calc_grad = !grad.empty();
+
+	//	if (calc_grad)
+	//		std::fill(grad.begin(), grad.end(), 0.0);
+
+	//	int num_freqs = m_freqs.size();
+	//	int num_coeffs = Cn.size();
+
+	//	// 2. Parallel Region
+	//	#pragma omp parallel
+	//	{
+	//		// A. Thread-Local Accumulators (Stack allocated for speed)
+	//		double thread_sum_squares = 0.0;
+	//		std::vector<double> thread_grad;
+	//		if (calc_grad)
+	//			thread_grad.assign(num_coeffs, 0.0); // Initialize with zeros
+
+	//		// B. Distribute Frequency Loop
+	//		#pragma omp for nowait 
+	//		for (int i = 0; i < num_freqs; i++)
+	//		{
+	//			double f = m_freqs[i];
+	//			double Zl = m_Zl[i];
+
+	//			// Call Model (Serial execution per thread)
+	//			auto [T, T_grads] = GMN_calculate_T_matrix_with_grad(m_Z0, m_er, m_d, Cn, f, m_K);
+
+	//			// --- Physics Calculation ---
+	//			std::complex<double> A = T(0, 0), B = T(0, 1), C = T(1, 0), D = T(1, 1);
+	//			std::complex<double> Zin_num = A * Zl + B;
+	//			std::complex<double> Zin_den = C * Zl + D;
+	//			std::complex<double> Zin = Zin_num / Zin_den;
+	//			std::complex<double> Gamma = (Zin - m_Zs) / (Zin + m_Zs);
+
+	//			// Accumulate Error (Local)
+	//			thread_sum_squares += std::pow(std::norm(Gamma), 2);
+
+	//			// Accumulate Gradient (Local)
+	//			if (calc_grad)
+	//			{
+	//				for (int n = 0; n < num_coeffs; n++)
+	//				{
+	//					std::complex<double> dA = T_grads[n](0, 0);
+	//					std::complex<double> dB = T_grads[n](0, 1);
+	//					std::complex<double> dC = T_grads[n](1, 0);
+	//					std::complex<double> dD = T_grads[n](1, 1);
+
+	//					// Quotient Rule for Zin
+	//					std::complex<double> dNum = dA * Zl + dB;
+	//					std::complex<double> dDen = dC * Zl + dD;
+	//					std::complex<double> dZin = (dNum * Zin_den - Zin_num * dDen) / (Zin_den * Zin_den);
+
+	//					// Quotient Rule for Gamma
+	//					std::complex<double> dGamma = (2.0 * m_Zs * dZin) / std::pow(Zin + m_Zs, 2);
+
+	//					// Chain Rule for |G|^4
+	//					thread_grad[n] += 4.0 * std::norm(Gamma) * std::real(Gamma * std::conj(dGamma));
+	//				}
+	//			}
+	//		}
+
+	//		// C. Critical Section: Merge Local Results to Global
+	//		#pragma omp critical
+	//		{
+	//			total_sum_squares += thread_sum_squares;
+	//			if (calc_grad)
+	//			{
+	//				for (int n = 0; n < num_coeffs; n++)
+	//					grad[n] += thread_grad[n];
+	//			}
+	//		}
+	//	}
+
+	//	// 3. Final Scaling
+	//	double objective_val = std::sqrt(total_sum_squares);
+
+	//	if (calc_grad)
+	//	{
+	//		if (objective_val > 1e-12)
+	//		{
+	//			double scale = 0.5 / objective_val;
+	//			for (auto& g : grad) g *= scale;
+	//		}
+	//		else
+	//		{
+	//			std::fill(grad.begin(), grad.end(), 0.0);
+	//		}
+	//	}
+
+	//	return objective_val;
+	//}
 
 	//double NTL_opt::objective_with_fd_gradient(const std::vector<double>& Cn, std::vector<double>& grad, void* data) const
 	//{
