@@ -29,8 +29,8 @@ namespace NTL
 	matrix3x3cd calculate_Y_matrix(const WPD& wpd, double f, int K = 50);
 
 	matrix3x3cd calculate_S_matrix(double Z0, double er, double d2, const std::vector<double>& Cn2,
-		double d3, const std::vector<double>& Cn3, double R, double f, double Z1, double Z2, double Z3, int K = 50);
-	matrix3x3cd calculate_S_matrix(const WPD& wpd, double f, double Z1, double Z2, double Z3, int K = 50);
+		double d3, const std::vector<double>& Cn3, double R, double f, std::array<std::complex<double>, 3> Zl, int K = 50);
+	matrix3x3cd calculate_S_matrix(const WPD& wpd, double f, std::array<std::complex<double>, 3> Zl, int K = 50);
 
 
 
@@ -63,7 +63,7 @@ namespace NTL
 		}
 
 		matrix3x3cd Y_matrix(double f, int K = 50) const;
-		matrix3x3cd S_matrix(double f, double Z1, double Z2, double Z3, int K = 50) const;
+		matrix3x3cd S_matrix(double f, std::array<std::complex<double>, 3> Zl, int K = 50) const;
 
 	private:
 		NTL m_ntl2, m_ntl3;
