@@ -8,18 +8,10 @@ namespace NTL
 		double G = 1 / R;
 
 		matrix2x2cd y2, y3;
-		#pragma omp parallel sections
-		{
-			#pragma omp section
-			{
-				y2 = calculate_Y_matrix(Z0, er, d2, Cn2, f, K);
-			}
-			#pragma omp section
-			{
-				y3 = calculate_Y_matrix(Z0, er, d3, Cn3, f, K);
-			}
-		}
+		y2 = calculate_Y_matrix(Z0, er, d2, Cn2, f, K);
 
+
+		y3 = calculate_Y_matrix(Z0, er, d3, Cn3, f, K);
 		matrix2x2cd y_R
 		{
 			{G, -G},
