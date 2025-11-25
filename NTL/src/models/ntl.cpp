@@ -62,7 +62,7 @@ namespace NTL
 		}
 	}
 
-	double calculate_e_eff(double z, double e_r) //function of impedance z
+	double calculate_er_eff(double z, double e_r) //function of impedance z
 	{
 		double wh = calculate_W_H(z, e_r);
 		return (e_r + 1) / 2 + (e_r - 1) / 2 * ((std::pow(1 + 12 / wh, -0.5) + ((wh < 1) ? 0.04 * (std::pow(1 - wh, 2)) : 0)));
@@ -89,7 +89,7 @@ namespace NTL
 		for (int i = 0; i < K; i++)
 		{
 			double z = calculate_Z(Z0, d, Cn, (double(i) + 0.5) * _dz);
-			calculate_Ti(temp_Ti, z, f, _dz, calculate_e_eff(z, e_r));
+			calculate_Ti(temp_Ti, z, f, _dz, calculate_er_eff(z, e_r));
 			T *= temp_Ti;
 		}
 
@@ -101,9 +101,57 @@ namespace NTL
 		return calculate_T_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), f, K);
 	}
 
-	// In ntl.cpp
-
 	std::pair<matrix2x2cd, std::vector<matrix2x2cd>> calculate_T_matrix_with_grad(
+		double Z0, double er, double d, const std::vector<double>& Cn, double f, int K)
+	{
+		double _dz = d / K;
+		int N = Cn.size();
+		auto calculate_Ti = [](matrix2x2cd& T, const double& Z, const double& f, const double& d, const double& e_r) {
+			const double theta{ 2 * M_PI * f * std::sqrt(e_r) * d / M_C };
+			const double cos_theta{ std::cos(theta) };
+			const double sin_theta{ std::sin(theta) };
+
+			T(0, 0) = { cos_theta, 0 };
+			T(0, 1) = { 0, Z * sin_theta };
+			T(1, 0) = { 0, sin_theta / Z };
+			T(1, 1) = { cos_theta, 0 };
+			};
+
+		std::vector<matrix2x2cd> L(K), R(K), T(K), dT_dCn(N, matrix2x2cd::Zero());
+
+		for (int i = 0; i < K; i++)
+		{
+			double z = calculate_Z(Z0, d, Cn, (double(i) + 0.5) * _dz);
+			calculate_Ti(T[i], z, f, _dz, er);
+		}
+
+		L[0] = matrix2x2cd::Identity();
+		R[K - 1] = matrix2x2cd::Identity();
+
+		for (int i = 1; i < K; i++)
+		{
+			L[i] = L[i - 1] * T[i - 1];
+			R[K - 1 - i] = T[K - i] * R[K - i];
+		}
+
+		matrix2x2cd temp_T;
+		double dZ = 1e-6;
+
+		for (int i = 0; i < N; i++)
+			for (int k = 0; k < K; k++)
+			{
+				double zi = (double(k) + 0.5) * _dz;
+				double z = calculate_Z(Z0, d, Cn, zi);
+				calculate_Ti(temp_T, z + dZ, f, _dz, er);
+				dT_dCn[i] += L[k] * (temp_T - T[k]) / dZ * R[k] * z * std::cos(2 * M_PI * zi / d * double(i));
+			}	
+
+
+		return { L[K - 1] * T[K - 1], dT_dCn };
+	}
+
+	
+	std::pair<matrix2x2cd, std::vector<matrix2x2cd>> GMN_calculate_T_matrix_with_grad(
 		double Z0, double er, double d, const std::vector<double>& Cn, double f, int K)
 	{
 		double _dz = d / K;
@@ -116,7 +164,7 @@ namespace NTL
 		// Helper lambda for local T calculation
 		auto calc_Ti_local = [&](double Z, double len, double eps) {
 			matrix2x2cd T;
-			double e_eff = calculate_e_eff(Z, eps);
+			double e_eff = calculate_er_eff(Z, eps);
 			double theta = 2 * M_PI * f * std::sqrt(e_eff) * len / M_C;
 			double c = std::cos(theta);
 			double s = std::sin(theta);
@@ -127,7 +175,7 @@ namespace NTL
 
 		// 1. Pre-calculate Section Matrices and Local Derivatives
 		// (Parallelizable loop)
-		#pragma omp parallel for
+		//#pragma omp parallel for
 		for (int i = 0; i < K; i++)
 		{
 			double z_pos = (double(i) + 0.5) * _dz;
@@ -168,7 +216,7 @@ namespace NTL
 			};
 
 		// Combine: dT/dCn = Sum_i ( L_i * dTi/dZ * R_i * dZ_i/dCn )
-		#pragma omp parallel for
+		//#pragma omp parallel for
 		for (int n = 0; n < N; n++)
 		{
 			for (int i = 0; i < K; i++)
@@ -264,10 +312,10 @@ namespace NTL
 		return calculate_W_H(impedance_at_z, m_er);
 	}
 
-	double NTL::e_eff(const double& z) const //function of position z
+	double NTL::er_eff(const double& z) const //function of position z
 	{
 		double impedance_at_z = Z(z);
-		return calculate_e_eff(impedance_at_z, m_er);
+		return calculate_er_eff(impedance_at_z, m_er);
 	}
 
 	std::vector<std::pair<double, double>> NTL::get_Z_vec(double step_size) const

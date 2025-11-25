@@ -29,13 +29,15 @@ namespace NTL
 	std::complex<double> calculate_Zin(const NTL& ntl, double Zl, double f, int K = 50);
 
 	double calculate_W_H(double z, double e_r);
-	double calculate_e_eff(double z, double e_r);
+	double calculate_er_eff(double z, double e_r);
 
 	matrix2x2cd calculate_T_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn,
 		double f, int K = 50);
 	matrix2x2cd calculate_T_matrix(const NTL& ntl, double f, int K = 50);
 
 	std::pair<matrix2x2cd, std::vector<matrix2x2cd>> calculate_T_matrix_with_grad(
+		double Z0, double er, double d, const std::vector<double>& Cn, double f, int K = 50);
+	std::pair<matrix2x2cd, std::vector<matrix2x2cd>> GMN_calculate_T_matrix_with_grad(
 		double Z0, double er, double d, const std::vector<double>& Cn, double f, int K = 50);
 
 	matrix2x2cd calculate_S_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn,
@@ -82,7 +84,7 @@ namespace NTL
 		std::complex<double> Zin(double Zl, double f, int K = 50) const;
 
 		double W_H(double z) const;
-		double e_eff(const double& z) const;
+		double er_eff(const double& z) const;
 
 		//data extraction
 		std::vector<std::pair<double, double>> get_Z_vec(double step_size = 0.1) const;
