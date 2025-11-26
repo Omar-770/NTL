@@ -108,6 +108,7 @@
     <ClCompile Include="src\optimisation\WPD_opt.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\common\enums.h" />
     <ClInclude Include="src\common\file_handler.h" />
     <ClInclude Include="src\simulation\NTL_sim.h" />
     <ClInclude Include="src\optimisation\NTL_opt.h" />

@@ -71,6 +71,9 @@
     <ClInclude Include="src\optimisation\WPD_opt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\common\enums.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\dir\NTL1.json" />
