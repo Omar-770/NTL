@@ -1,6 +1,6 @@
 #include "wpd.h"
 
-namespace NTL
+namespace WPD
 {
 	matrix3x3cd calculate_Y_matrix(double Z0, double er, double d2, const std::vector<double>& Cn2,
 		double d3, const std::vector<double>& Cn3, double R, double f, int K)
@@ -8,8 +8,8 @@ namespace NTL
 		double G = 1 / R;
 
 		matrix2x2cd y2, y3;
-		y2 = calculate_Y_matrix(Z0, er, d2, Cn2, f, K);
-		y3 = calculate_Y_matrix(Z0, er, d3, Cn3, f, K);
+		y2 = NTL::calculate_Y_matrix(Z0, er, d2, Cn2, f, K);
+		y3 = NTL::calculate_Y_matrix(Z0, er, d3, Cn3, f, K);
 		matrix2x2cd y_R
 		{
 			{G, -G},

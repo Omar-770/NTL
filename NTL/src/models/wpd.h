@@ -13,7 +13,7 @@
 #undef M_PI
 #endif 
 
-namespace NTL
+namespace WPD
 {
 	class WPD;
 	struct WPD_DATA;
@@ -22,6 +22,9 @@ namespace NTL
 	using matrix3x3cd = Eigen::Matrix<std::complex<double>, 3, 3>;
 	using matrix4x4cd = Eigen::Matrix<std::complex<double>, 4, 4>;
 	using matrix5x5cd = Eigen::Matrix<std::complex<double>, 5, 5>;
+
+	inline constexpr double M_PI = 3.14159265358979311599796346854;
+	inline constexpr double M_C = 299792458;
 
 
 	matrix3x3cd calculate_Y_matrix(double Z0, double er, double d2, const std::vector<double>& Cn2,
@@ -33,10 +36,9 @@ namespace NTL
 	matrix3x3cd calculate_S_matrix(const WPD& wpd, double f, std::array<std::complex<double>, 3> Zl, int K = 50);
 
 
-
 	struct WPD_DATA
 	{
-		NTL ntl2, ntl3;
+		NTL::NTL ntl2, ntl3;
 		double R;
 	};
 
@@ -48,7 +50,7 @@ namespace NTL
 
 		}
 
-		WPD(const NTL& ntl2, const NTL& ntl3, double R)
+		WPD(const NTL::NTL& ntl2, const NTL::NTL& ntl3, double R)
 			: m_ntl2(ntl2), m_ntl3(ntl3), m_R(R), m_Z0(ntl2.get_Z0()), m_er(ntl2.get_er())
 		{
 			if (ntl2.get_Z0() != ntl3.get_Z0() || ntl2.get_er() != ntl3.get_er())
@@ -66,21 +68,19 @@ namespace NTL
 		matrix3x3cd S_matrix(double f, std::array<std::complex<double>, 3> Zl, int K = 50) const;
 
 	private:
-		NTL m_ntl2, m_ntl3;
+		NTL::NTL m_ntl2, m_ntl3;
 		double m_R;
 		double m_Z0;
 		double m_er;
 
 	public:
 		//setters and getters
-		void set_Z0(const double& Z0) { m_Z0 = Z0; };
-		void set_er(const double& er) { m_er = er; };
 		void set_R(const double& R) { m_R = R; };
-		void set_arms(const NTL& ntl2, const NTL& ntl3) {if (ntl2.get_Z0() != ntl3.get_Z0() || ntl2.get_er() != ntl3.get_er())
+		void set_arms(const NTL::NTL& ntl2, const NTL::NTL& ntl3) {if (ntl2.get_Z0() != ntl3.get_Z0() || ntl2.get_er() != ntl3.get_er())
 				throw(std::logic_error("Attempting to set a WPD using two different substrates")); m_ntl2 = ntl2; m_ntl3 = ntl3; }
 
-		NTL get_ntl2() const { return m_ntl2; }
-		NTL get_ntl3() const { return m_ntl3; }
+		NTL::NTL get_ntl2() const { return m_ntl2; }
+		NTL::NTL get_ntl3() const { return m_ntl3; }
 		double get_R() const { return m_R; }
 		double get_Z0() const { return m_Z0; }
 		double get_er() const { return m_er; }
