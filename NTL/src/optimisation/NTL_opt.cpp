@@ -208,6 +208,9 @@ namespace NTL
 		int F = m_freqs.size();
 		int N = Cn.size();
 
+		if (!grad.empty())
+			std::fill(grad.begin(), grad.end(), 0.0);
+		
 		#pragma omp parallel
 		{
 			double thread_sum_squares{};
@@ -219,7 +222,7 @@ namespace NTL
 				double f = m_freqs[i];
 				double Zl = m_Zl[i];
 
-				auto [T, dT] = calculate_T_matrix_with_grad(m_Z0, m_er, m_d, Cn, f, m_K);
+				auto [T, dT] = GMN_calculate_T_matrix_with_grad(m_Z0, m_er, m_d, Cn, f, m_K);
 
 				std::complex<double> A = T(0, 0);
 				std::complex<double> B = T(0, 1);
@@ -231,9 +234,10 @@ namespace NTL
 
 				std::complex<double> Zin = num / den;
 				std::complex<double> Gamma = (Zin - m_Zs) / (Zin + m_Zs);
+				std::complex<double> multiplication_factor = 8.0 * std::norm(Gamma) * m_Zs / (den * std::pow(Zin + m_Zs, 2));
 
 				thread_sum_squares += std::pow(std::norm(Gamma), 2);
-				std::complex<double> dGamma;
+				
 
 				for (int n = 0; n < N; n++)
 				{
@@ -241,11 +245,10 @@ namespace NTL
 					std::complex<double> dB = dT[n](0, 1);
 					std::complex<double> dC = dT[n](1, 0);
 					std::complex<double> dD = dT[n](1, 1);
+					std::complex<double> dGamma = Zl * dA + dB - Zin * (Zl * dC + dD);
+					dGamma *= multiplication_factor;
 
-					dGamma += Zl * dA + dB - Zin * (Zl * dC + dD);
-					dGamma *= 2 * m_Zs / (den * std::pow(Zin + m_Zs, 2));
-
-					thread_grad[n] += 4.0 * std::norm(Gamma) * std::real(Gamma * std::conj(dGamma));
+					thread_grad[n] +=  (Gamma.real() * dGamma.real() + Gamma.imag() * dGamma.imag());
 
 				}
 			}
