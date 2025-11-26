@@ -3,33 +3,24 @@
 #include <utility>
 #include "qt_plot.h"
 #include "models/ntl.h"
+#include "common/enums.h"
 
 namespace NTL
 {
-	class NTL_sim;
+	class sim;
 	struct zin_wrapper;
 	struct s_wrapper_1;
 	struct s_wrapper_2;
-
-	enum class phase
-	{
-		rad, deg
-	};
-
-	enum class mag
-	{
-		abs, dB
-	};
 	
 	struct zin_wrapper
 	{
-		zin_wrapper(NTL_sim& sim, const NTL& ntl, double Zl, const char* title)
+		zin_wrapper(sim& sim, const NTL& ntl, double Zl, const char* title)
 			: m_sim(sim), m_ntl(ntl), m_Zl(Zl), m_title(title) {};
 		QMainWindow* magnitude(mag mode = mag::abs);
 		QMainWindow* phase(enum class phase mode = phase::deg);
 
 	private:
-		NTL_sim& m_sim;
+		sim& m_sim;
 		const NTL& m_ntl; double m_Zl;
 		const char* m_title;
 		std::vector<std::complex<double>> data();
@@ -38,7 +29,7 @@ namespace NTL
 
 	struct s_wrapper_2
 	{
-		s_wrapper_2(NTL_sim& sim, const NTL& ntl, double Zs, const std::vector<double>& Zl, 
+		s_wrapper_2(sim& sim, const NTL& ntl, double Zs, const std::vector<double>& Zl, 
 			const std::vector<std::string>& labels, const char* title, int index)
 			: m_sim(sim), m_ntl(ntl), m_Zs(Zs), m_Zl(Zl), m_labels(labels), m_title(title), m_index(index) {
 		};
@@ -46,7 +37,7 @@ namespace NTL
 		QMainWindow* magnitude(mag mode = mag::dB);
 		QMainWindow* phase(enum class phase mode = phase::deg);
 	private:
-		NTL_sim& m_sim;
+		sim& m_sim;
 		const NTL& m_ntl; double m_Zs; const std::vector<double>& m_Zl;
 		const std::vector<std::string>& m_labels; const char* m_title;
 		int m_index;
@@ -55,7 +46,7 @@ namespace NTL
 
 	struct s_wrapper_1
 	{
-		s_wrapper_1(NTL_sim& sim, const NTL& ntl, double Zs, const std::vector<double>& Zl,
+		s_wrapper_1(sim& sim, const NTL& ntl, double Zs, const std::vector<double>& Zl,
 			const std::vector<std::string>& labels, const char* title)
 			: m_sim(sim), m_ntl(ntl), m_Zs(Zs), m_Zl(Zl), m_labels(labels), m_title(title) {};
 
@@ -65,17 +56,17 @@ namespace NTL
 		s_wrapper_2 S22() { return s_wrapper_2(m_sim, m_ntl, m_Zs, m_Zl, m_labels, m_title, 22); }
 		std::vector<QMainWindow*> all(mag mode = mag::dB);
 	private:
-		NTL_sim& m_sim;
+		sim& m_sim;
 		const NTL& m_ntl; double m_Zs; const std::vector<double>& m_Zl;
 		const std::vector<std::string>& m_labels; const char* m_title;
 	};
 
 
-	class NTL_sim
+	class sim
 	{
 	public:
-		NTL_sim() : m_fmin(0), m_fmax(0), m_fstep(0) {};
-		NTL_sim(double f_min, double f_max, double f_step = 1e7)
+		sim() : m_fmin(0), m_fmax(0), m_fstep(0) {};
+		sim(double f_min, double f_max, double f_step = 1e7)
 			: m_fmin(f_min), m_fmax(f_max), m_fstep(f_step)
 		{
 

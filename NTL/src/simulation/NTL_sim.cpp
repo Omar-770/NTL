@@ -2,12 +2,12 @@
 #include <string>
 namespace NTL
 {
-	QMainWindow* NTL_sim::merge(const char* title)
+	QMainWindow* sim::merge(const char* title)
 	{
 		return m_plotter.combine(m_windows, title);
 	}
 
-	QMainWindow* NTL_sim::z_profile(const NTL& ntl,const char* title, double step_size)
+	QMainWindow* sim::z_profile(const NTL& ntl,const char* title, double step_size)
 	{
 		auto z_vec = ntl.get_Z_vec(step_size);
 		QMainWindow* window = m_plotter.plot(z_vec, "Z", title);
@@ -34,10 +34,12 @@ namespace NTL
 			it++;
 		}
 
+		std::string title;
 		if (m_title[0] == '\0')
-			m_title = mode == mag::abs ? "|Zin(f)|" : "|Zin(f)| dB";
+			title = mode == mag::abs ? "|Zin(f)|" : "|Zin(f)| dB";
+		std::cout << title << std::endl;
 
-		QMainWindow* window = m_sim.m_plotter.plot(Zin, "Zin", m_title);
+		QMainWindow* window = m_sim.m_plotter.plot(Zin, "Zin", title.c_str());
 		m_sim.m_windows.push_back(window);
 		return window;
 	}
@@ -61,7 +63,12 @@ namespace NTL
 			it++;
 		}
 
-		QMainWindow* window = m_sim.m_plotter.plot(Zin, "Zin", m_title);
+		std::string title;
+		if (m_title[0] == '\0')
+			title = "Zin (Phase)";
+		std::cout << title << std::endl;
+
+		QMainWindow* window = m_sim.m_plotter.plot(Zin, "Zin", title.c_str());
 		m_sim.m_windows.push_back(window);
 		return window;
 	}
@@ -78,7 +85,7 @@ namespace NTL
 		return temp;
 	}
 
-	QMainWindow* NTL_sim::w_h_profile(const NTL& ntl,const char* title, double step_size)
+	QMainWindow* sim::w_h_profile(const NTL& ntl,const char* title, double step_size)
 	{
 		auto w_h_vec = ntl.get_w_h_vec(step_size);
 		QMainWindow* window = m_plotter.plot_mirror(w_h_vec, title);
