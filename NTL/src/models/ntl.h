@@ -20,7 +20,6 @@ namespace NTL
 	inline constexpr double M_PI = 3.14159265358979311599796346854;
 	inline constexpr double M_C = 299792458;
 
-
 	double calculate_Z(double Z0, double d, const std::vector<double>& Cn, double z);
 	double calculate_Z(const NTL& ntl, double z);
 	double calculate_Z(const double* Cn, const size_t& n, const double& Z0, const double& d, const double& z); //for nlopt
@@ -31,6 +30,8 @@ namespace NTL
 	double calculate_W_H(double z, double e_r);
 	double calculate_er_eff(double z, double e_r);
 
+	matrix2x2cd legacy_calculate_T_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn,
+		double f, int K = 50);
 	matrix2x2cd calculate_T_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn,
 		double f, int K = 50);
 	matrix2x2cd calculate_T_matrix(const NTL& ntl, double f, int K = 50);
