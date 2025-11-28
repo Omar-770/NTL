@@ -17,7 +17,6 @@
 
 namespace fh = NTL::fh;
 
-
 int main(int argc, char* argv[])
 {
 	try
@@ -25,23 +24,22 @@ int main(int argc, char* argv[])
 		QApplication app(argc, argv);
 		auto start_time = std::chrono::high_resolution_clock::now();
 
-		
-		NTL::NTL ntl = fh::file_to_ntl("NTL1");
-		WPD::WPD wpd(ntl, ntl, 200);
-		WPD::sim sim(1e7, 2.2e9, 1e6);
-		NTL::sim simn(1e7, 2.2e9, 1e6);
+		//Setup Arms
 
-		std::array<std::complex<double>, 3> Zl;
+		NTL::NTL ntl1 = fh::file_to_ntl("NTL1");
+		NTL::NTL ntl2 = fh::file_to_ntl("NTL2");
 
-		simn.sparam(ntl, 100, { 50 }, {}, "100 to 50").S11().magnitude();
-		simn.sparam(ntl, 50, { 100 }, {}, "50 to 100").S11().magnitude();
+		//Create WPD
+		WPD::WPD wpd(ntl1, ntl2, 100);
 
-		sim.w_h_profile(wpd);
-		sim.sparams(wpd, {50, 100, 100});
-		
+		//Simulation
+		WPD::sim wpdsim(1e7, 2.2e9, 1e6);
 
-		sim.merge("WPD");
-		simn.merge("NTL");
+
+		wpdsim.w_h_profile(wpd);
+		wpdsim.sparams(wpd, { 50, 50, 50});
+
+		wpdsim.merge("WPD");
 
 		auto end_time = std::chrono::high_resolution_clock::now();
 		app.exec();

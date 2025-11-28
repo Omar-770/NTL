@@ -70,6 +70,8 @@ namespace NTL
 			throw(std::invalid_argument("Empty frequency vector"));
 		if (m_Z_min < 1e-6 || m_Z_max < 1e-6 || m_Z_max < m_Z_min)
 			throw(std::invalid_argument("Invalid min/max impedance(s)"));
+
+		omp_set_num_threads(std::min<int>(m_freqs.size(), 11));
 	}
 
 	NTL_opt_result NTL_opt::optimise(console mode)
@@ -222,7 +224,7 @@ namespace NTL
 				double f = m_freqs[i];
 				double Zl = m_Zl[i];
 
-				auto [T, dT] = GMN_calculate_T_matrix_with_grad(m_Z0, m_er, m_d, Cn, f, m_K);
+				auto [T, dT] = calculate_T_matrix_with_grad(m_Z0, m_er, m_d, Cn, f, m_K);
 
 				std::complex<double> A = T(0, 0);
 				std::complex<double> B = T(0, 1);
