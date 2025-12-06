@@ -32,6 +32,7 @@ namespace WPD
 		std::vector<QMainWindow*> w_h_profile(const WPD& wpd);
 
 		std::vector<QMainWindow*> sparams(const WPD& wpd, std::array<std::complex<double>, 3> Zl, int K = 50);
+		std::vector<QMainWindow*> sparams(const WPD& wpd, double Zref, NTL::NTL& output2, NTL::NTL& output3, int K = 50);
 
 		std::vector<QMainWindow*> get_windows() const { return m_windows; }
 
