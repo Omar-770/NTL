@@ -2,6 +2,19 @@
 
 namespace NTL
 {
+	NTL_opt_setup::NTL_opt_setup(const NTL_opt_setup& setup): opt_setup(setup)
+	{
+		Z0 = setup.Z0;
+		er = setup.er;
+		d = setup.d;
+		Zs = setup.Zs;
+		Zl = setup.Zl;
+		freqs = setup.freqs;
+		K = setup.K;
+		Z_min = setup.Z_min;
+		Z_max = setup.Z_max;
+	}
+
 	NTL_opt_setup::NTL_opt_setup(const nlohmann::json& j) : opt_setup(j)
 	{
 		if (j.at("setup_type") != "NTL_opt")
@@ -44,10 +57,18 @@ namespace NTL
 		};
 	}
 
-	NTL_opt::NTL_opt(const NTL_opt_setup& setup) : opt(setup),
-		m_Z0(setup.Z0), m_er(setup.er), m_d(setup.d), m_Zs(setup.Zs), m_Zl(setup.Zl),
-		m_freqs(setup.freqs), m_K(setup.K), m_Z_min(setup.Z_min), m_Z_max(setup.Z_max)
+	NTL_opt::NTL_opt(const NTL_opt_setup& setup) : opt(setup)
 	{
+		m_Z0 = setup.Z0;
+		m_er = setup.er;
+		m_d = setup.d;
+		m_Zs = setup.Zs;
+		m_Zl = setup.Zl;
+		m_freqs = setup.freqs;
+		m_K = setup.K;
+		m_Z_min = setup.Z_min;
+		m_Z_max = setup.Z_max;
+
 		if (m_Zl.size() < m_freqs.size() && m_Zl.size() != 1)
 			throw(std::invalid_argument("Number of load impedances & frequency points mismatch"));
 

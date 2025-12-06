@@ -17,7 +17,7 @@ namespace NTL
 	struct NTL_opt_setup : public opt_setup
 	{
 		NTL_opt_setup() {};
-		NTL_opt_setup(const NTL_opt_setup& setup) : opt_setup(setup) {};
+		NTL_opt_setup(const NTL_opt_setup& setup);
 		NTL_opt_setup(const nlohmann::json& j);
 		double Z0{ 0 };
 		double er{ 0 };
