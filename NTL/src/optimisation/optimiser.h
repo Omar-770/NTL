@@ -56,18 +56,14 @@ namespace NTL
 		opt_result optimiser(console mode = console::inactive);
 		double m_accepted_error;
 		int m_max_attempts;
-
-	private:
 		int m_N;
 		std::vector<double> m_lb;
 		std::vector<double> m_ub;
 		std::vector<double> m_toll_bounds;
 		std::vector<double> m_toll_z;
 		double m_GBL_MAX;
-		double m_LCL_MAX;
+		double m_LCL_MAX;	
 		
-		
-
 
 	private:
 		//nlopt functions
