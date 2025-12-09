@@ -9,17 +9,17 @@
 
 namespace NTL
 {
-	class opt;
-	struct opt_setup;
-	struct opt_result;
+	class optimiser;
+	struct optimiser_setup;
+	struct optimiser_result;
 	enum class console;
 
 
-	struct opt_setup
+	struct optimiser_setup
 	{
-		opt_setup() {};
-		opt_setup(const nlohmann::json& j);
-		virtual ~opt_setup() = default;
+		optimiser_setup() {};
+		optimiser_setup(const nlohmann::json& j);
+		virtual ~optimiser_setup() = default;
 
 		int N{ 0 };
 		std::vector<double> lb{};
@@ -34,7 +34,7 @@ namespace NTL
 		virtual nlohmann::json get_json() const;
 	};
 
-	struct opt_result
+	struct optimiser_result
 	{
 		std::vector<double> optimised_cn;
 		double final_error;
@@ -46,14 +46,14 @@ namespace NTL
 		active = true, inactive = false
 	};
 
-	class opt
+	class optimiser
 	{
 	public:
-		opt(const opt_setup& setup);
+		optimiser(const optimiser_setup& setup);
 			
 
 	protected:
-		opt_result optimiser(console mode = console::inactive);
+		optimiser_result run_optimiser(console mode = console::inactive);
 		double m_accepted_error;
 		int m_max_attempts;
 		int m_N;

@@ -3,7 +3,7 @@
 
 namespace NTL
 {
-	opt_setup::opt_setup(const nlohmann::json& j)
+	optimiser_setup::optimiser_setup(const nlohmann::json& j)
 	{
 		N = j.at("N").get<int>(); lb = j.at("lb").get<std::vector<double>>();
 		lb = j.at("lb").get<std::vector<double>>(); ub = j.at("ub").get<std::vector<double>>(); 
@@ -15,7 +15,7 @@ namespace NTL
 		max_attempts = j.at("max_attempts").get<double>();			
 	}
 
-	nlohmann::json opt_setup::get_json() const
+	nlohmann::json optimiser_setup::get_json() const
 	{
 		return {
 			{ "json_type", "setup" },
@@ -32,7 +32,7 @@ namespace NTL
 		};
 	}
 
-	opt::opt(const opt_setup& setup) : m_N(setup.N), m_lb(setup.lb), m_ub(setup.ub), m_toll_bounds(setup.toll_bounds),
+	optimiser::optimiser(const optimiser_setup& setup) : m_N(setup.N), m_lb(setup.lb), m_ub(setup.ub), m_toll_bounds(setup.toll_bounds),
 		m_toll_z(setup.toll_z), m_GBL_MAX(setup.GBL_MAX), m_LCL_MAX(setup.LCL_MAX), m_accepted_error(setup.accepted_error),
 		m_max_attempts(setup.max_attempts)
 	{
@@ -40,7 +40,7 @@ namespace NTL
 			throw(std::invalid_argument("Incomplete optimisation setup"));
 	}
 
-	opt_result opt::optimiser(console mode)
+	optimiser_result optimiser::run_optimiser(console mode)
 	{
 		bool output = (mode == console::active) ? true : false;
 
@@ -69,17 +69,19 @@ namespace NTL
 			global_optimizer.set_lower_bounds(m_lb);
 			global_optimizer.set_upper_bounds(m_ub);
 
+			Cn_this_attempt = rand_start(global_optimizer);
+
 			global_optimizer.set_min_objective([](const std::vector<double>& Cn, std::vector<double>& grad, void* data) -> double {
-				return (static_cast<opt*>(data))->min_objective(Cn);
+				return (static_cast<optimiser*>(data))->min_objective(Cn);
 				}, this);
 			global_optimizer.add_equality_mconstraint([](unsigned m, double* res, unsigned n, const double* x, double* grad, void* data) {
-				(*static_cast<opt*>(data)).equality_constraints(m, res, n, x);
+				(*static_cast<optimiser*>(data)).equality_constraints(m, res, n, x);
 				}, this, m_toll_bounds);
 			global_optimizer.add_inequality_mconstraint([](unsigned m, double* res, unsigned n, const double* Cn, double*, void* data) {
-				(*static_cast<opt*>(data)).inequality_constraints_Zmax(m, res, n, Cn);
+				(*static_cast<optimiser*>(data)).inequality_constraints_Zmax(m, res, n, Cn);
 				}, this, m_toll_z);
 			global_optimizer.add_inequality_mconstraint([](unsigned m, double* res, unsigned n, const double* Cn, double*, void* data) {
-				(*static_cast<opt*>(data)).inequality_constraints_Zmin(m, res, n, Cn);
+				(*static_cast<optimiser*>(data)).inequality_constraints_Zmin(m, res, n, Cn);
 				}, this, m_toll_z);
 
 			global_optimizer.set_ftol_rel(1e-3);
@@ -115,16 +117,16 @@ namespace NTL
 
 				local_optimizer.set_local_optimizer(inner_optimizer);
 				local_optimizer.set_min_objective([](const std::vector<double>& Cn, std::vector<double>& grad, void* data) -> double {
-					return (static_cast<opt*>(data))->objective_with_fd_gradient(Cn, grad, data);
+					return (static_cast<optimiser*>(data))->objective_with_fd_gradient(Cn, grad, data);
 					}, this);
 				local_optimizer.add_equality_mconstraint([](unsigned m, double* res, unsigned n, const double* x, double* grad, void* data) {
-					(*static_cast<opt*>(data)).equality_constraints(m, res, n, x);
+					(*static_cast<optimiser*>(data)).equality_constraints(m, res, n, x);
 					}, this, m_toll_bounds);
 				local_optimizer.add_inequality_mconstraint([](unsigned m, double* res, unsigned n, const double* Cn, double*, void* data) {
-					(*static_cast<opt*>(data)).inequality_constraints_Zmax(m, res, n, Cn);
+					(*static_cast<optimiser*>(data)).inequality_constraints_Zmax(m, res, n, Cn);
 					}, this, m_toll_z);
 				local_optimizer.add_inequality_mconstraint([](unsigned m, double* res, unsigned n, const double* Cn, double*, void* data) {
-					(*static_cast<opt*>(data)).inequality_constraints_Zmin(m, res, n, Cn);
+					(*static_cast<optimiser*>(data)).inequality_constraints_Zmin(m, res, n, Cn);
 					}, this, m_toll_z);
 
 				local_optimizer.set_ftol_rel(1e-7);
