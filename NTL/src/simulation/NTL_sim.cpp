@@ -31,7 +31,7 @@ namespace NTL
 		for (double f = m_sim.m_fmin; f < m_sim.m_fmax; f += m_sim.m_fstep)
 		{
 			Zin.emplace_back(f, std::abs(*it));
-			it++;
+			it++;			
 		}
 
 		std::string title;
