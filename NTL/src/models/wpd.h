@@ -28,37 +28,46 @@ namespace WPD
 
 
 	matrix3x3cd calculate_Y_matrix(double Z0, double er, double d2, const std::vector<double>& Cn2,
-		double d3, const std::vector<double>& Cn3, double R, double f, int K = 50);
+		double d3, const std::vector<double>& Cn3, int M, double R, double f, int K = 50);
 	matrix3x3cd calculate_Y_matrix(const WPD& wpd, double f, int K = 50);
 
 	matrix3x3cd calculate_S_matrix(double Z0, double er, double d2, const std::vector<double>& Cn2,
-		double d3, const std::vector<double>& Cn3, double R, double f, std::array<std::complex<double>, 3> Zl, int K = 50);
+		double d3, const std::vector<double>& Cn3, int M, double R, double f, std::array<std::complex<double>, 3> Zl, int K = 50);
 	matrix3x3cd calculate_S_matrix(const WPD& wpd, double f, std::array<std::complex<double>, 3> Zl, int K = 50);
 
+	// [Add inside namespace WPD, before the class definition or with other functions]
+
+	std::pair<matrix3x3cd, std::vector<matrix3x3cd>> calculate_S_matrix_with_grad(
+		double Z0, double er, double d2, const std::vector<double>& Cn2,
+		double d3, const std::vector<double>& Cn3, int M, double R, double f,
+		std::array<std::complex<double>, 3> Zl, int K = 50);
 
 	struct WPD_DATA
 	{
 		NTL::NTL ntl2, ntl3;
 		double R;
+		int M;
 	};
 
 	class WPD
 	{
 	public:
-		WPD() : m_ntl2(), m_ntl3(), m_R(0)
+		WPD() : m_ntl2(), m_ntl3(), m_Z0(0), m_R(0), m_M(0)
 		{
 
 		}
 
 		WPD(const NTL::NTL& ntl2, const NTL::NTL& ntl3, double R)
-			: m_ntl2(ntl2), m_ntl3(ntl3), m_R(R), m_Z0(ntl2.get_Z0()), m_er(ntl2.get_er())
+			: m_ntl2(ntl2), m_ntl3(ntl3), m_R(R), m_Z0(ntl2.get_Z0()), m_er(ntl2.get_er()), m_M(ntl2.get_M())
 		{
 			if (ntl2.get_Z0() != ntl3.get_Z0() || ntl2.get_er() != ntl3.get_er())
 				throw(std::logic_error("Attempting to initialise a WPD using two different substrates"));
+
 		}
 
 		WPD(const WPD_DATA& data)
-			:m_ntl2(data.ntl2), m_ntl3(data.ntl3), m_R(data.R), m_Z0(data.ntl2.get_Z0()), m_er(data.ntl2.get_er())
+			:m_ntl2(data.ntl2), m_ntl3(data.ntl3), m_R(data.R), m_Z0(data.ntl2.get_Z0()), m_er(data.ntl2.get_er()),
+			m_M(data.M)
 		{
 			if (data.ntl2.get_Z0() != data.ntl3.get_Z0() || data.ntl2.get_er() != data.ntl3.get_er())
 				throw(std::logic_error("Attempting to initialise a WPD using two different substrates"));
@@ -72,6 +81,7 @@ namespace WPD
 		double m_R;
 		double m_Z0;
 		double m_er;
+		int m_M;
 
 	public:
 		//setters and getters
@@ -84,5 +94,6 @@ namespace WPD
 		double get_R() const { return m_R; }
 		double get_Z0() const { return m_Z0; }
 		double get_er() const { return m_er; }
+		double get_M() const { return m_M; }
 	};
 }
