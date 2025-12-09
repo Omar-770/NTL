@@ -2,20 +2,27 @@
 
 namespace NTL
 {
-	NTL_opt_setup::NTL_opt_setup(const NTL_opt_setup& setup): opt_setup(setup)
+	opt_setup::opt_setup(const opt_setup& setup): optimiser_setup(setup)
 	{
 		Z0 = setup.Z0;
 		er = setup.er;
 		d = setup.d;
+		M = setup.M;
 		Zs = setup.Zs;
 		Zl = setup.Zl;
 		freqs = setup.freqs;
 		K = setup.K;
 		Z_min = setup.Z_min;
 		Z_max = setup.Z_max;
+		Z_at_0 = setup.Z_at_0;
+		Z_at_d = setup.Z_at_d;
 	}
 
-	NTL_opt_setup::NTL_opt_setup(const nlohmann::json& j) : opt_setup(j)
+	opt_setup::opt_setup(const optimiser_setup& setup) : optimiser_setup(setup)
+	{
+	}
+
+	opt_setup::opt_setup(const nlohmann::json& j) : optimiser_setup(j)
 	{
 		if (j.at("setup_type") != "NTL_opt")
 			throw(std::logic_error("Attempted to read a setup from a different json object"));
@@ -23,15 +30,18 @@ namespace NTL
 		Z0 = j.at("Z0").get<double>();
 		er = j.at("er").get<double>();
 		d = j.at("d").get<double>();
+		M = j.at("M").get<double>();
 		Zs = j.at("Zs").get<double>();
 		Zl = j.at("Zl").get<std::vector<double>>();
 		freqs = j.at("freqs").get<std::vector<double>>();
 		K = j.at("K").get<double>();
 		Z_min = j.at("Z_min").get<double>();
 		Z_max = j.at("Z_max").get<double>();
+		Z_at_0 = j.at("Z_at_0").get<double>();
+		Z_at_d = j.at("Z_at_d").get<double>();
 	}
 
-	nlohmann::json NTL_opt_setup::get_json() const
+	nlohmann::json opt_setup::get_json() const
 	{
 		return {
 			{ "json_type", "setup" },
@@ -48,28 +58,36 @@ namespace NTL
 			{ "Z0", Z0 },
 			{ "er", er },
 			{ "d", d },
+			{ "M", M },
 			{ "Zs", Zs },
 			{ "Zl", Zl },
 			{ "freqs", freqs },
 			{ "K", K },
 			{ "Z_min", Z_min },
-			{ "Z_max", Z_max }
+			{ "Z_max", Z_max },
+			{ "Z_at_0", Z_at_0 },
+			{ "Z_at_0", Z_at_d }
 		};
 	}
 
-	NTL_opt::NTL_opt(const NTL_opt_setup& setup) : opt(setup)
+	opt::opt(const opt_setup& setup) : optimiser(setup)
 	{
 		m_Z0 = setup.Z0;
 		m_er = setup.er;
 		m_d = setup.d;
+		m_M = setup.M;
 		m_Zs = setup.Zs;
 		m_Zl = setup.Zl;
 		m_freqs = setup.freqs;
 		m_K = setup.K;
 		m_Z_min = setup.Z_min;
 		m_Z_max = setup.Z_max;
+		m_Z_at_0 = setup.Z_at_0;
+		m_Z_at_d = setup.Z_at_d;
 
-		if (m_Zl.size() < m_freqs.size() && m_Zl.size() != 1)
+		if (m_M > m_N)
+			throw(std::invalid_argument("Sine terms must be fewer or equal to the number of terms"));
+		if (m_Zl.size() != 1 && (m_Zl.size() < m_freqs.size() || m_Zl.size() > m_freqs.size()))
 			throw(std::invalid_argument("Number of load impedances & frequency points mismatch"));
 
 		if (m_Zl.size() == 1)
@@ -86,31 +104,32 @@ namespace NTL
 		for (auto& z : m_Zl)
 			if (z < 1e-6)
 				throw(std::invalid_argument("Invalid load impedance(s)"));
-
 		if (m_freqs.empty())
 			throw(std::invalid_argument("Empty frequency vector"));
 		if (m_Z_min < 1e-6 || m_Z_max < 1e-6 || m_Z_max < m_Z_min)
 			throw(std::invalid_argument("Invalid min/max impedance(s)"));
+		if (m_Z_at_0 < 1e-6 || m_Z_at_d < 1e-6)
+			throw(std::invalid_argument("Invalid impedance boundary conditions"));
 
 		omp_set_num_threads(std::min<int>(m_freqs.size(), 11));
 	}
 
-	NTL_opt_result NTL_opt::optimise(console mode)
+	opt_result opt::optimise(console mode)
 	{
 		bool out = (mode == console::active) ? true : false;
 		NTL ntl(m_Z0, m_er, m_d);
 		auto start_time = std::chrono::high_resolution_clock::now();
-		opt_result opt_result = optimiser(mode);
+		optimiser_result result = run_optimiser(mode);
 		auto end_time = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed = end_time - start_time;
-		ntl.set_Cn(opt_result.optimised_cn);
+		ntl.set_Cn(result.optimised_cn);
 
 		if (out)
 			std::cout << "*** Optimisation finished in " << elapsed.count() / 60.0 << " minutes" << std::endl;
-		return NTL_opt_result(opt_result, ntl);
+		return opt_result(result, ntl);
 	}
 
-	NTL_opt_result NTL_opt::optimise_d(double resolution, console mode)
+	opt_result opt::optimise_d(double resolution, console mode)
 	{
 		bool out = (mode == console::active) ? true : false;
 
@@ -122,8 +141,8 @@ namespace NTL
 		auto start_time = std::chrono::high_resolution_clock::now();
 		if (out)
 			std::cout << "\n\t===>>> Starting with d = " << m_d * 1000 << "mm" << std::endl;
-		opt_result init_result = optimiser(mode);
-		opt_result new_result = init_result;
+		optimiser_result init_result = run_optimiser(mode);
+		optimiser_result new_result = init_result;
 
 		if (init_result.final_error < m_accepted_error)
 		{
@@ -137,7 +156,7 @@ namespace NTL
 					std::cout << "\n\t===>>> Trimming NTL by " << resolution * 1000 << "mm to:\t"
 					<< m_d * 1000 << "mm" << std::endl;
 
-				opt_result result_this_attempt = optimiser(mode);
+				optimiser_result result_this_attempt = run_optimiser(mode);
 
 				if (result_this_attempt.final_error > m_accepted_error)
 				{
@@ -165,16 +184,16 @@ namespace NTL
 		m_d = init_d;
 		m_max_attempts = init_max_attempts;
 
-		return NTL_opt_result(new_result, ntl);
+		return opt_result(new_result, ntl);
 	}
 
-	NTL_opt_result NTL_opt::optimise_d(console mode)
+	opt_result opt::optimise_d(console mode)
 	{
 		return optimise_d(1.0e-3, mode);
 	}
 
 
-	double NTL_opt::min_objective(const std::vector<double>& Cn) const
+	double opt::min_objective(const std::vector<double>& Cn) const
 	{
 
 		double sum_squares{};
@@ -188,7 +207,7 @@ namespace NTL
 				double f = m_freqs[i];
 				double Zl = m_Zl[i];
 
-				matrix2x2cd T = calculate_T_matrix(m_Z0, m_er, m_d, Cn, f, m_K);
+				matrix2x2cd T = calculate_T_matrix(m_Z0, m_er, m_d, Cn, m_M, f, m_K);
 
 				std::complex<double> a = T(0, 0), b = T(0, 1), c = T(1, 0), d = T(1, 1);
 				std::complex<double> Zin = (Zl * a + b) / (Zl * c + d);
@@ -205,27 +224,27 @@ namespace NTL
 		return std::sqrt(sum_squares);
 	}
 
-	void NTL_opt::equality_constraints(unsigned m, double* res, unsigned n, const double* Cn) const
+	void opt::equality_constraints(unsigned m, double* res, unsigned n, const double* Cn) const
 	{
-		res[0] = calculate_Z(Cn, n, m_Z0, m_d, 0) - m_Z0;
-		res[1] = calculate_Z(Cn, n, m_Z0, m_d, m_d) - m_Z0;
+		res[0] = calculate_Z(Cn, n, m_M, m_Z0, m_d, 0) - m_Z_at_0;
+		res[1] = calculate_Z(Cn, n, m_M, m_Z0, m_d, m_d) - m_Z_at_d;
 	}
 
-	void NTL_opt::inequality_constraints_Zmax(unsigned m, double* res, unsigned n, const double* Cn) const
-	{
-		double dz = m_d / m_K;
-		for (int i = 0; i < m; ++i)
-			res[i] = calculate_Z(Cn, n, m_Z0, m_d, (i + 0.5) * dz) - m_Z_max;
-	}
-
-	void NTL_opt::inequality_constraints_Zmin(unsigned m, double* res, unsigned n, const double* Cn) const
+	void opt::inequality_constraints_Zmax(unsigned m, double* res, unsigned n, const double* Cn) const
 	{
 		double dz = m_d / m_K;
 		for (int i = 0; i < m; ++i)
-			res[i] = m_Z_min - calculate_Z(Cn, n, m_Z0, m_d, (i + 0.5) * dz);
+			res[i] = calculate_Z(Cn, n, m_M, m_Z0, m_d, (i + 0.5) * dz) - m_Z_max;
 	}
 
-	double NTL_opt::objective_with_fd_gradient(const std::vector<double>& Cn, std::vector<double>& grad, void* data) const
+	void opt::inequality_constraints_Zmin(unsigned m, double* res, unsigned n, const double* Cn) const
+	{
+		double dz = m_d / m_K;
+		for (int i = 0; i < m; ++i)
+			res[i] = m_Z_min - calculate_Z(Cn, n, m_M, m_Z0, m_d, (i + 0.5) * dz);
+	}
+
+	double opt::objective_with_fd_gradient(const std::vector<double>& Cn, std::vector<double>& grad, void* data) const
 	{
 		double total_sum_squares{};
 		int F = m_freqs.size();
@@ -245,7 +264,7 @@ namespace NTL
 				double f = m_freqs[i];
 				double Zl = m_Zl[i];
 
-				auto [T, dT] = calculate_T_matrix_with_grad(m_Z0, m_er, m_d, Cn, f, m_K);
+				auto [T, dT] = calculate_T_matrix_with_grad(m_Z0, m_er, m_d, Cn, m_M, f, m_K);
 
 				std::complex<double> A = T(0, 0);
 				std::complex<double> B = T(0, 1);
@@ -288,125 +307,4 @@ namespace NTL
 
 		return total_sum_squares;
 	}
-
-	//double NTL_opt::objective_with_fd_gradient(const std::vector<double>& Cn, std::vector<double>& grad, void* data) const
-	//{
-	//	// 1. Prepare global accumulators
-	//	double total_sum_squares = 0.0;
-	//	bool calc_grad = !grad.empty();
-
-	//	if (calc_grad)
-	//		std::fill(grad.begin(), grad.end(), 0.0);
-
-	//	int num_freqs = m_freqs.size();
-	//	int num_coeffs = Cn.size();
-
-	//	// 2. Parallel Region
-	//	#pragma omp parallel
-	//	{
-	//		// A. Thread-Local Accumulators (Stack allocated for speed)
-	//		double thread_sum_squares = 0.0;
-	//		std::vector<double> thread_grad;
-	//		if (calc_grad)
-	//			thread_grad.assign(num_coeffs, 0.0); // Initialize with zeros
-
-	//		// B. Distribute Frequency Loop
-	//		#pragma omp for nowait 
-	//		for (int i = 0; i < num_freqs; i++)
-	//		{
-	//			double f = m_freqs[i];
-	//			double Zl = m_Zl[i];
-
-	//			// Call Model (Serial execution per thread)
-	//			auto [T, T_grads] = GMN_calculate_T_matrix_with_grad(m_Z0, m_er, m_d, Cn, f, m_K);
-
-	//			// --- Physics Calculation ---
-	//			std::complex<double> A = T(0, 0), B = T(0, 1), C = T(1, 0), D = T(1, 1);
-	//			std::complex<double> Zin_num = A * Zl + B;
-	//			std::complex<double> Zin_den = C * Zl + D;
-	//			std::complex<double> Zin = Zin_num / Zin_den;
-	//			std::complex<double> Gamma = (Zin - m_Zs) / (Zin + m_Zs);
-
-	//			// Accumulate Error (Local)
-	//			thread_sum_squares += std::pow(std::norm(Gamma), 2);
-
-	//			// Accumulate Gradient (Local)
-	//			if (calc_grad)
-	//			{
-	//				for (int n = 0; n < num_coeffs; n++)
-	//				{
-	//					std::complex<double> dA = T_grads[n](0, 0);
-	//					std::complex<double> dB = T_grads[n](0, 1);
-	//					std::complex<double> dC = T_grads[n](1, 0);
-	//					std::complex<double> dD = T_grads[n](1, 1);
-
-	//					// Quotient Rule for Zin
-	//					std::complex<double> dNum = dA * Zl + dB;
-	//					std::complex<double> dDen = dC * Zl + dD;
-	//					std::complex<double> dZin = (dNum * Zin_den - Zin_num * dDen) / (Zin_den * Zin_den);
-
-	//					// Quotient Rule for Gamma
-	//					std::complex<double> dGamma = (2.0 * m_Zs * dZin) / std::pow(Zin + m_Zs, 2);
-
-	//					// Chain Rule for |G|^4
-	//					thread_grad[n] += 4.0 * std::norm(Gamma) * std::real(Gamma * std::conj(dGamma));
-	//				}
-	//			}
-	//		}
-
-	//		// C. Critical Section: Merge Local Results to Global
-	//		#pragma omp critical
-	//		{
-	//			total_sum_squares += thread_sum_squares;
-	//			if (calc_grad)
-	//			{
-	//				for (int n = 0; n < num_coeffs; n++)
-	//					grad[n] += thread_grad[n];
-	//			}
-	//		}
-	//	}
-
-	//	// 3. Final Scaling
-	//	double objective_val = std::sqrt(total_sum_squares);
-
-	//	if (calc_grad)
-	//	{
-	//		if (objective_val > 1e-12)
-	//		{
-	//			double scale = 0.5 / objective_val;
-	//			for (auto& g : grad) g *= scale;
-	//		}
-	//		else
-	//		{
-	//			std::fill(grad.begin(), grad.end(), 0.0);
-	//		}
-	//	}
-
-	//	return objective_val;
-	//}
-
-	//double NTL_opt::objective_with_fd_gradient(const std::vector<double>& Cn, std::vector<double>& grad, void* data) const
-	//{
-
-	//	const double f_base = min_objective(Cn);
-
-	//	if (!grad.empty())
-	//	{
-	//		const double h = 1e-8;
-	//		int N = Cn.size();
-
-	//		#pragma omp parallel for
-	//		for (int i = 0; i < N; ++i)
-	//		{
-	//			std::vector<double> Cn_nudged = Cn;
-	//			Cn_nudged[i] += h;
-
-	//			double f_nudged = min_objective(Cn_nudged);
-
-	//			grad[i] = (f_nudged - f_base) / h;
-	//		}
-	//	}
-
-	//	return f_base;
-	//}
 }
