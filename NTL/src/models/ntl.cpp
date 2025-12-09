@@ -3,35 +3,46 @@
 namespace NTL
 {
 
-	double calculate_Z(double Z0, double d, const std::vector<double>& Cn, double z)
+	double calculate_Z(double Z0, double d, const std::vector<double>& Cn, int M, double z)
 	{
 		double Z{};
 		double temp = 2 * M_PI * z / d;
+		
 
-		for (int n = 0; n < Cn.size(); n++)
+		int N = Cn.size();
+		for (int n = 0; n < N - M; n++)
 			Z += Cn[n] * std::cos(temp * n);
+
+		int j = N - M - 1;
+		for (int m = 1; m < M + 1; m++)
+			Z += Cn[j + m] * std::sin(temp * m);
 
 		return Z0 * std::exp(Z);
 	}
 
 	double calculate_Z(const NTL& ntl, double z)
 	{
-		return calculate_Z(ntl.get_Z0(), ntl.get_d(), ntl.get_Cn(), z);
+		return calculate_Z(ntl.get_Z0(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), z);
 	}
 
-	double calculate_Z(const double* Cn, const size_t& n, const double& Z0, const double& d, const double& z)
+	double calculate_Z(const double* Cn, const size_t& n, const size_t& m,const double& Z0, const double& d, const double& z)
 	{
 		double Z{};
 		double temp = 2 * M_PI * z / d;
-		for (size_t i = 0; i < n; ++i) {
+		for (size_t i = 0; i < n - m; ++i) {
 			Z += Cn[i] * std::cos(temp * i);
+		}
+
+		int j = n - m - 1;
+		for (size_t i = 1; i < m + 1; ++i) {
+			Z += Cn[j + i] * std::cos(temp * i);
 		}
 		return Z0 * std::exp(Z);
 	}
 
-	std::complex<double> calculate_Zin(double Z0, double e_r, double d, const std::vector<double>& Cn, double Zl, double f, int K)
+	std::complex<double> calculate_Zin(double Z0, double e_r, double d, const std::vector<double>& Cn, int M, double Zl, double f, int K)
 	{
-		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, f, K);
+		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, M, f, K);
 
 		std::complex<double> A = T(0, 0), B = T(0, 1), C = T(1, 0), D = T(1, 1);
 		std::complex<double> Zin = (Zl * A + B) / (Zl * C + D);
@@ -41,7 +52,7 @@ namespace NTL
 
 	std::complex<double> calculate_Zin(const NTL& ntl, double Zl, double f, int K)
 	{
-		return calculate_Zin(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), Zl, f, K);
+		return calculate_Zin(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), Zl, f, K);
 	}
 
 
@@ -68,11 +79,9 @@ namespace NTL
 		return (e_r + 1) / 2 + (e_r - 1) / 2 * ((std::pow(1 + 12 / wh, -0.5) + ((wh < 1) ? 0.04 * (std::pow(1 - wh, 2)) : 0)));
 	}
 
-	matrix2x2cd legacy_calculate_T_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn,
-		double f, int K)
+	matrix2x2cd calculate_T_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, int M, double f, int K)
 	{
-		double _dz = d / K;
-		matrix2x2cd T = matrix2x2cd::Identity();
+		double _dz = d / K;		
 		matrix2x2cd temp_Ti;
 
 		auto calculate_Ti = [](matrix2x2cd& T, const double& Z, const double& f, const double& d, const double& e_r) {
@@ -86,67 +95,58 @@ namespace NTL
 			T(1, 1) = { cos_theta, 0 };
 			};
 
-		for (int i = 0; i < K; i++)
+		if(M == 0) // Even optimisation
 		{
-			double z = calculate_Z(Z0, d, Cn, (double(i) + 0.5) * _dz);
-			calculate_Ti(temp_Ti, z, f, _dz, calculate_er_eff(z, e_r));
-			T *= temp_Ti;
-		}
+			matrix2x2cd T_half = matrix2x2cd::Identity();
+			int half_K = K / 2;
+			for (int i = 0; i < half_K; i++)
+			{
+				double z = calculate_Z(Z0, d, Cn, M, (double(i) + 0.5) * _dz);
+				calculate_Ti(temp_Ti, z, f, _dz, calculate_er_eff(z, e_r));
+				T_half *= temp_Ti;
+			}
 
-		return T;
-	}
+			matrix2x2cd T_half_rev;
+			T_half_rev << T_half(1, 1), T_half(0, 1), T_half(1, 0), T_half(0, 0);
 
-	matrix2x2cd calculate_T_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, double f, int K)
-	{
-		double _dz = d / K;
-		matrix2x2cd T_half = matrix2x2cd::Identity();
-		matrix2x2cd temp_Ti;
-
-		auto calculate_Ti = [](matrix2x2cd& T, const double& Z, const double& f, const double& d, const double& e_r) {
-			const double theta{ 2 * M_PI * f * std::sqrt(e_r) * d / M_C };
-			const double cos_theta{ std::cos(theta) };
-			const double sin_theta{ std::sin(theta) };
-
-			T(0, 0) = { cos_theta, 0 };
-			T(0, 1) = { 0, Z * sin_theta };
-			T(1, 0) = { 0, sin_theta / Z };
-			T(1, 1) = { cos_theta, 0 };
-			};
-
-		int half_K = K / 2;
-		for (int i = 0; i < half_K; i++)
-		{
-			double z = calculate_Z(Z0, d, Cn, (double(i) + 0.5) * _dz);
-			calculate_Ti(temp_Ti, z, f, _dz, calculate_er_eff(z, e_r));
-			T_half *= temp_Ti;
-		}
-
-		matrix2x2cd T_half_rev;
-		T_half_rev << T_half(1, 1), T_half(0, 1), T_half(1, 0), T_half(0, 0);
-
-		if (K % 2 == 0)
-		{
-			return T_half * T_half_rev;
-		}
+			if (K % 2 == 0)
+			{
+				return T_half * T_half_rev;
+			}
+			else
+			{
+				double z_mid = calculate_Z(Z0, d, Cn, M, (double(half_K) + 0.5) * _dz);
+				calculate_Ti(temp_Ti, z_mid, f, _dz, calculate_er_eff(z_mid, e_r));
+				return T_half * temp_Ti * T_half_rev;
+			}
+		} 
 		else
 		{
-			double z_mid = calculate_Z(Z0, d, Cn, (double(half_K) + 0.5) * _dz);
-			calculate_Ti(temp_Ti, z_mid, f, _dz, calculate_er_eff(z_mid, e_r));
-			return T_half * temp_Ti * T_half_rev;
+			matrix2x2cd T = matrix2x2cd::Identity();
+			for (int i = 0; i < K; i++)
+			{
+				double z = calculate_Z(Z0, d, Cn, M, (double(i) + 0.5) * _dz);
+				calculate_Ti(temp_Ti, z, f, _dz, calculate_er_eff(z, e_r));
+				T *= temp_Ti;
+			}
+
+			return T;
 		}
 	}
 
 	matrix2x2cd calculate_T_matrix(const NTL& ntl, double f, int K)
 	{
-		return calculate_T_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), f, K);
+		return calculate_T_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), f, K);
 	}
 
 	std::pair<matrix2x2cd, std::vector<matrix2x2cd>> calculate_T_matrix_with_grad(
-		double Z0, double er, double d, const std::vector<double>& Cn, double f, int K)
+		double Z0, double er, double d, const std::vector<double>& Cn, int M, double f, int K)
 	{
 		double _dz = d / K;
 		int N = Cn.size();
-		int half_K = (K + 1) / 2;
+		std::vector<matrix2x2cd> L(K), R(K), T(K), dT_dZ(K), dT_dCn(N, matrix2x2cd::Zero());
+		std::vector<double> Z(K);
+
 		auto calculate_Ti = [](matrix2x2cd& T, const double& Z, const double& f, const double& d, const double& e_r) {
 			const double theta{ 2 * M_PI * f * std::sqrt(e_r) * d / M_C };
 			const double cos_theta{ std::cos(theta) };
@@ -158,146 +158,82 @@ namespace NTL
 			T(1, 1) = { cos_theta, 0 };
 			};
 
-		std::vector<matrix2x2cd> L(K), R(K), T(K), dT_dZ(K), dT_dCn(N, matrix2x2cd::Zero());
-		std::vector<double> Z(K); 
-
 		matrix2x2cd temp_T;
 		double dZ = 1e-6;
 
-		for (int i = 0; i < half_K; i++)
+		if(M == 0) // Even optimisaton
 		{
-			Z[i] = calculate_Z(Z0, d, Cn, (double(i) + 0.5) * _dz);
-			double e_eff = calculate_er_eff(Z[i], er);
-			calculate_Ti(T[i], Z[i], f, _dz, e_eff);
-			calculate_Ti(temp_T, Z[i] + dZ, f, _dz, e_eff);
-			dT_dZ[i] = (temp_T - T[i]) / dZ;
-		}
-
-		for (int i = half_K; i < K; i++)
-		{
-			T[i] = T[K - 1 - i];
-			dT_dZ[i] = dT_dZ[K - 1 - i];
-			Z[i] = Z[K - 1 - i];
-		}
-
-
-		L[0] = matrix2x2cd::Identity();
-		for (int i = 1; i < K; i++)
-			L[i] = L[i - 1] * T[i - 1];
-
-		for (int i = 0; i < K; i++)
-		{
-			R[K - 1 - i] << L[i](1, 1), L[i](0, 1), L[i](1, 0), L[i](0, 0);
-		}
-
-		for (int k = 0; k < K; k++)
-		{
-			double zi = (double(k) + 0.5) * _dz;
-			for (int i = 0; i < N; i++)
-				dT_dCn[i] += L[k] * dT_dZ[k] * R[k] * Z[k] * std::cos(2 * M_PI * zi / d * double(i));
-		}
-
-		return { L[K - 1] * T[K - 1], dT_dCn };
-	}
-
-
-	std::pair<matrix2x2cd, std::vector<matrix2x2cd>> GMN_calculate_T_matrix_with_grad(
-		double Z0, double er, double d, const std::vector<double>& Cn, double f, int K)
-	{
-		double _dz = d / K;
-		int N = Cn.size();
-
-		// Helper lambda for filling a T matrix
-		auto calculate_Ti = [&](matrix2x2cd& T, const double& Z, const double& e_eff) {
-			const double theta{ 2 * M_PI * f * std::sqrt(e_eff) * d / M_C }; // Note: d here is _dz passed in context
-			const double cos_theta{ std::cos(theta) };
-			const double sin_theta{ std::sin(theta) };
-
-			T(0, 0) = { cos_theta, 0 };
-			T(0, 1) = { 0, Z * sin_theta };
-			T(1, 0) = { 0, sin_theta / Z };
-			T(1, 1) = { cos_theta, 0 };
-			};
-
-		std::vector<matrix2x2cd> T(K);
-		// Store the "Matrix Derivative w.r.t Z" for each position to reuse across all Cn
-		std::vector<matrix2x2cd> dT_dZ_matrices(K);
-
-		double perturbation_dZ = 1e-6;
-		int half_K = (K + 1) / 2; // Handle odd/even K safely
-
-		// 1. Calculate T and dT/dZ for the first half using Symmetry
-		for (int k = 0; k < half_K; k++)
-		{
-			double zi = (double(k) + 0.5) * _dz;
-			double z = calculate_Z(Z0, d, Cn, zi);
-			double e_eff = calculate_er_eff(z, er); // Assuming this depends on Z
-
-			// A. Nominal Matrix T[k]
-			calculate_Ti(T[k], z, e_eff);
-
-			// B. Perturbed Matrix for Finite Difference
-			// Note: We assume er_eff changes slowly enough or is handled inside calculate_Ti if needed.
-			// For strict accuracy, recalculate e_eff for z + perturbation_dZ if it depends strongly on Z.
-			matrix2x2cd T_pert;
-			calculate_Ti(T_pert, z + perturbation_dZ, e_eff);
-
-			// Pre-calculate the matrix difference term
-			dT_dZ_matrices[k] = (T_pert - T[k]) / perturbation_dZ;
-		}
-
-		// 2. Mirror to the second half (Exploiting Symmetry)
-		for (int k = 0; k < K / 2; k++)
-		{
-			int mirror_idx = K - 1 - k;
-			T[mirror_idx] = T[k];                // Identical because Z is identical
-			dT_dZ_matrices[mirror_idx] = dT_dZ_matrices[k]; // Identical sensitivity
-		}
-
-		// 3. Accumulate L (Left) and R (Right) matrices
-		std::vector<matrix2x2cd> L(K), R(K);
-		L[0] = matrix2x2cd::Identity();
-		R[K - 1] = matrix2x2cd::Identity();
-
-		// Forward accumulation
-		for (int i = 1; i < K; i++) {
-			L[i] = L[i - 1] * T[i - 1];
-		}
-		// Backward accumulation
-		for (int i = 1; i < K; i++) {
-			R[K - 1 - i] = T[K - i] * R[K - i]; // T[K-i] is the matrix to the right of K-1-i
-		}
-
-		// 4. Compute Gradients
-		// Now we just sum terms. No heavy sin/cos/pow calls here!
-		std::vector<matrix2x2cd> dT_dCn(N, matrix2x2cd::Zero());
-
-		for (int k = 0; k < K; k++)
-		{
-			// Common matrix term for this position: L * (dT/dZ) * R
-			matrix2x2cd common_term = L[k] * dT_dZ_matrices[k] * R[k];
-
-			double zi = (double(k) + 0.5) * _dz;
-			double z_val = calculate_Z(Z0, d, Cn, zi); // Need Z value for the chain rule term
-
-			for (int i = 0; i < N; i++)
+			int half_K = (K + 1) / 2;
+			
+			// Calculate
+			for (int i = 0; i < half_K; i++)
 			{
-				// Chain rule: dZ/dCn term
-				// Assuming Z = Z0 * exp(Sum(Cn * cos...)) or similar
-				// Your term was: z * cos(2 * PI * zi / d * i)
-				// Ensure 'i' here matches your basis function index (e.g. if Cn[0] is DC, adjust accordingly)
-				double dZ_dCni = z_val * std::cos(2 * M_PI * zi / d * double(i));
-
-				dT_dCn[i] += common_term * dZ_dCni;
+				Z[i] = calculate_Z(Z0, d, Cn, M, (double(i) + 0.5) * _dz);
+				double e_eff = calculate_er_eff(Z[i], er);
+				calculate_Ti(T[i], Z[i], f, _dz, e_eff);
+				calculate_Ti(temp_T, Z[i] + dZ, f, _dz, e_eff);
+				dT_dZ[i] = (temp_T - T[i]) / dZ;
 			}
+
+			// Mirror
+			for (int i = half_K; i < K; i++)
+			{
+				T[i] = T[K - 1 - i];
+				dT_dZ[i] = dT_dZ[K - 1 - i];
+				Z[i] = Z[K - 1 - i];
+			}
+
+			// Calculate
+			L[0] = matrix2x2cd::Identity();
+			for (int i = 1; i < K; i++)
+				L[i] = L[i - 1] * T[i - 1];
+
+			// Mirror
+			for (int i = 0; i < K; i++)
+			{
+				R[K - 1 - i] << L[i](1, 1), L[i](0, 1), L[i](1, 0), L[i](0, 0);
+			}			
+					
+		}
+		else
+		{
+			// Calculate
+			for (int i = 0; i < K; i++)
+			{
+				Z[i] = calculate_Z(Z0, d, Cn, M, (double(i) + 0.5) * _dz);
+				double e_eff = calculate_er_eff(Z[i], er);
+				calculate_Ti(T[i], Z[i], f, _dz, e_eff);
+				calculate_Ti(temp_T, Z[i] + dZ, f, _dz, e_eff);
+				dT_dZ[i] = (temp_T - T[i]) / dZ;
+			}
+
+			// Calculate
+			L[0] = matrix2x2cd::Identity();
+			R[K - 1] = matrix2x2cd::Identity();
+			for (int i = 1; i < K; i++)
+			{
+				L[i] = L[i - 1] * T[i - 1];
+				R[K - 1 - i] = T[K - i] * R[K - i];
+			}
+			
+		}
+
+		// Final 
+		for (int k = 0; k < K; k++)
+		{
+			double zi = (double(k) + 0.5) * _dz;
+			for (int i = 0; i < N; i++)
+				dT_dCn[i] += L[k] * dT_dZ[k] * R[k] * Z[k] * (i < N - M ? std::cos(2 * M_PI * zi / d * double(i))
+																		: std::sin(2 * M_PI * zi / d * double(i - N + M + 1)));
 		}
 
 		return { L[K - 1] * T[K - 1], dT_dCn };
 	}
 
-	matrix2x2cd calculate_S_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, double f, double Zs, double Zl, int K)
+	matrix2x2cd calculate_S_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, int M,
+		double f, double Zs, double Zl, int K)
 	{
-		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, f, K);
+		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, M, f, K);
 		std::complex<double> A = T(0, 0);
 		std::complex<double> B = T(0, 1);
 		std::complex<double> C = T(1, 0);
@@ -324,13 +260,13 @@ namespace NTL
 
 	matrix2x2cd calculate_S_matrix(const NTL& ntl, double f, double Zs, double Zl, int K)
 	{
-		return calculate_S_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), f, Zs, Zl, K);
+		return calculate_S_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), f, Zs, Zl, K);
 	}
 
-	matrix2x2cd calculate_Y_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn,
+	matrix2x2cd calculate_Y_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, int M,
 		double f, int K)
 	{
-		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, f, K);
+		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, M, f, K);
 		std::complex<double> A = T(0, 0);
 		std::complex<double> B = T(0, 1);
 		std::complex<double> C = T(1, 0);
@@ -353,7 +289,7 @@ namespace NTL
 
 	matrix2x2cd calculate_Y_matrix(const NTL& ntl, double f, int K)
 	{
-		return calculate_Y_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), f, K);
+		return calculate_Y_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), f, K);
 	}
 
 	/// CLASS_NTL_BEGIN
@@ -361,7 +297,7 @@ namespace NTL
 	double NTL::Z(double z) const //function of position
 	{
 
-		return calculate_Z(m_Z0, m_d, m_Cn, z);
+		return calculate_Z(m_Z0, m_d, m_Cn, m_M, z);
 
 	}
 
@@ -406,9 +342,9 @@ namespace NTL
 		return w_h_vec;
 	}
 
-	NTL_DATA NTL::data() const
+	DATA NTL::data() const
 	{
-		return NTL_DATA{ m_Z0, m_er, m_d, m_Cn };
+		return DATA{ m_Z0, m_er, m_d, m_Cn };
 	}
 
 	matrix2x2cd NTL::T_matrix(double f, int K) const
