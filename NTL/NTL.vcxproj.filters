@@ -76,9 +76,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\dir\NTL1.json" />
-    <None Include="..\dir\NTL2.json" />
-    <None Include="..\dir\setup1.json" />
-    <None Include="..\dir\setup2.json" />
+    <None Include="..\dir\wpd_setup1.json" />
+    <None Include="..\dir\WPD1.json" />
   </ItemGroup>
 </Project>

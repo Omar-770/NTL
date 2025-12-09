@@ -1,9 +1,7 @@
 #include <iostream>
 #include <Eigen/Dense>
-#include <fstream>
 #include <vector>
 #include <omp.h>
-#include <algorithm>
 #include <complex>
 #include "qt_plot.h"
 #include "models/ntl.h"
@@ -22,36 +20,38 @@ int main(int argc, char* argv[])
 	try
 	{
 		QApplication app(argc, argv);
-		auto start_time = std::chrono::high_resolution_clock::now();
 
-		//Setup Arms
+		auto setup = fh::file_to_setup<WPD::opt_setup>("wpd_setup1");
 
-		NTL::NTL ntl1 = fh::file_to_ntl("NTL1");
-		NTL::NTL ntl2 = fh::file_to_ntl("NTL2");
+		WPD::opt opt(setup);
+		WPD::opt_result result = opt.optimise();
 
-		//Create WPD
-		WPD::WPD wpd(ntl1, ntl2, 100);
+		WPD::WPD wpd = result.wpd;
+		NTL::NTL out2 = result.output2;
+		NTL::NTL out3 = result.output3;
 
-		//Simulation
-		WPD::sim wpdsim(1e7, 2.2e9, 1e6);
+		WPD::sim sim(1e7, 2.2e9, 1e6, setup.freqs);
+		NTL::sim out_sim(1e7, 2.2e9, 1e6);
+		sim.w_h_profile(wpd);
+		sim.add_window(out_sim.w_h_profile(out2, "Out2"));
+		sim.add_window(out_sim.w_h_profile(out3, "Out3"));
+		sim.sparams(wpd, setup.Zref, out2, out3);	
 
+		sim.merge("WPD");
 
-		wpdsim.w_h_profile(wpd);
-		wpdsim.sparams(wpd, { 50, 50, 50});
+		fh::wpd_to_file(wpd, "single_band_equal_wpd/wpd");
+		fh::ntl_to_file(out2, "single_band_equal_wpd/out2");
+		fh::ntl_to_file(out3, "single_band_equal_wpd/out3");
+		fh::setup_to_file<WPD::opt_setup>(setup, "single_band_equal_wpd/setup");
+		
 
-		wpdsim.merge("WPD");
-
-		auto end_time = std::chrono::high_resolution_clock::now();
 		app.exec();
 	}
-	catch (std::invalid_argument& e)
+	catch (const std::exception& e)
 	{
-		std::cout << "Invalid argument exception: ";
-		std::cout << e.what() << std::endl;
-	}
-	catch (std::exception& e)
-	{
-		std::cout << e.what() << std::endl;
+		std::cerr << "\nCRITICAL ERROR: " << e.what() << std::endl;
+		std::cerr << "Press Enter to exit..." << std::endl;
+		std::cin.get();
 	}
 
 	return 0;

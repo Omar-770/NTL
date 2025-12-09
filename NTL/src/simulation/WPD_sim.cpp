@@ -41,6 +41,9 @@ namespace WPD
 		for (auto& vec : S)
 			vec.reserve(points);
 
+		auto log_freq = m_freqs.cbegin();
+		auto log_freq_end = m_freqs.cend();
+
 		for (double f = m_fmin; f < m_fmax; f += m_fstep)
 		{
 			matrix3x3cd S_matrix = wpd.S_matrix(f, Zl, K);
@@ -53,6 +56,20 @@ namespace WPD
 			S[4].emplace_back(f, 20 * std::log10(std::abs(S_matrix(1, 2)))); //S23
 			S[5].emplace_back(f, 20 * std::log10(std::abs(S_matrix(2, 2)))); //S33	
 
+			if (log_freq != log_freq_end && std::abs(f - *log_freq) < 1e-6)
+			{
+				std::cout << "[Frequency: " << f << "]\n";
+				std::cout << "Matching:\n";
+				std::cout << "\tS11: " << 20 * std::log10(std::abs(S_matrix(0, 0))) << '\n';
+				std::cout << "\tS22: " << 20 * std::log10(std::abs(S_matrix(1, 1))) << '\n';
+				std::cout << "\tS33: " << 20 * std::log10(std::abs(S_matrix(2, 2))) << '\n';
+				std::cout << "Split:\n";
+				std::cout << "\tS12: " << 20 * std::log10(std::abs(S_matrix(0, 1))) << '\n';
+				std::cout << "\tS13: " << 20 * std::log10(std::abs(S_matrix(0, 2))) << '\n';
+				std::cout << "Isolation:\n";
+				std::cout << "\tS23: " << 20 * std::log10(std::abs(S_matrix(1, 2))) << "\n\n";
+				log_freq++;
+			}
 		}
 
 		std::vector<QMainWindow*> windows;
@@ -86,6 +103,9 @@ namespace WPD
 		std::array<std::complex<double>, 3> Zl;
 		Zl[0] = Zref;
 
+		auto log_freq = m_freqs.cbegin();
+		auto log_freq_end = m_freqs.cend();
+
 		for (double f = m_fmin; f < m_fmax; f += m_fstep)
 		{
 			Zl[1] = output2.Zin(Zref, f, K);
@@ -98,8 +118,23 @@ namespace WPD
 			S[2].emplace_back(f, 20 * std::log10(std::abs(S_matrix(0, 2)))); //S13
 			S[3].emplace_back(f, 20 * std::log10(std::abs(S_matrix(1, 1)))); //S22
 			S[4].emplace_back(f, 20 * std::log10(std::abs(S_matrix(1, 2)))); //S23
-			S[5].emplace_back(f, 20 * std::log10(std::abs(S_matrix(2, 2)))); //S33	
-
+			S[5].emplace_back(f, 20 * std::log10(std::abs(S_matrix(2, 2)))); //S33							
+			
+			if (log_freq != log_freq_end && std::abs(f - *log_freq) < 1e-6)
+			{
+				std::cout << "[Frequency: " << f << "]\n";
+				std::cout << "Matching:\n";
+				std::cout << "\tS11: " << 20 * std::log10(std::abs(S_matrix(0, 0))) << '\n';
+				std::cout << "\tS22: " << 20 * std::log10(std::abs(S_matrix(1, 1))) << '\n';
+				std::cout << "\tS33: " << 20 * std::log10(std::abs(S_matrix(2, 2))) << '\n';
+				std::cout << "Split:\n";
+				std::cout << "\tS12: " << 20 * std::log10(std::abs(S_matrix(0, 1))) << '\n';
+				std::cout << "\tS13: " << 20 * std::log10(std::abs(S_matrix(0, 2))) << '\n';
+				std::cout << "Isolation:\n";
+				std::cout << "\tS23: " << 20 * std::log10(std::abs(S_matrix(1, 2))) << "\n\n";		
+				log_freq++;
+			}
+			
 		}
 
 		std::vector<QMainWindow*> windows;

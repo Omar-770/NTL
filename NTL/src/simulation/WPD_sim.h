@@ -15,15 +15,27 @@ namespace WPD
 	{
 	public:
 		sim() : m_fmin(0), m_fmax(0), m_fstep(0) {};
-		sim(double f_min, double f_max, double f_step = 1e7)
+
+		sim(double f_min, double f_max, double f_step = 1e6, const std::vector<double>& freqs_target = {})
 			: m_fmin(f_min), m_fmax(f_max), m_fstep(f_step)
 		{
-
+			set_target_f(freqs_target);
 		}
 
-		void set_f_sweep(double f_min, double f_max, double f_step = 1e7)
+		void set_f_sweep(double f_min, double f_max, double f_step = 1e6)
 		{
 			m_fmin = f_min; m_fmax = f_max; m_fstep = f_step;
+		}
+
+		void set_target_f(const std::vector<double>& f)
+		{
+			m_freqs = f;
+			std::sort(m_freqs.begin(), m_freqs.end());
+		}
+
+		void add_window(QMainWindow* window)
+		{
+			m_windows.push_back(window);
 		}
 
 		QMainWindow* merge(const char* title = "WPD_sim");
@@ -44,5 +56,7 @@ namespace WPD
 		qt_plot m_plotter;
 		std::vector<QMainWindow*> m_windows;
 		NTL::sim NTL_sim;
+
+		std::vector<double> m_freqs;
 	};
 }
