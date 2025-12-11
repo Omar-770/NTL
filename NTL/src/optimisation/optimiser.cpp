@@ -5,6 +5,9 @@ namespace NTL
 {
 	optimiser_setup::optimiser_setup(const nlohmann::json& j)
 	{
+		if (j.at("json_type") != "setup")
+			throw(std::logic_error("Attempted to read a setup from a different json object"));
+
 		N = j.at("N").get<int>(); lb = j.at("lb").get<std::vector<double>>();
 		lb = j.at("lb").get<std::vector<double>>(); ub = j.at("ub").get<std::vector<double>>(); 
 		toll_bounds = j.at("toll_bounds").get<std::vector<double>>();
