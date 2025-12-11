@@ -3,6 +3,7 @@
 #include "optimiser.h"
 #include <omp.h>
 #include <iostream>
+#include "common/file_handler.h"
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <algorithm>
@@ -24,8 +25,8 @@ namespace NTL
 		double er{ 0 };
 		double d{ 0 };
 		int M{ 0 };
-		double Zs{ 0 };
-		std::vector<double> Zl{};
+		std::vector<std::complex<double>> Zs;
+		std::vector<std::complex<double>> Zl;
 		std::vector<double> freqs{};
 		int K{ 0 };
 		double Z_min{ 0 };
@@ -58,8 +59,8 @@ namespace NTL
 		double m_er;
 		double m_d;
 		int m_M;
-		double m_Zs;
-		std::vector<double> m_Zl;
+		std::vector<std::complex<double>> m_Zs;
+		std::vector<std::complex<double>> m_Zl;
 		std::vector<double> m_freqs;
 		int m_K;
 		double m_Z_min;

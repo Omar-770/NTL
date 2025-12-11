@@ -182,7 +182,7 @@ namespace WPD
             output_setup.Z0 = m_Z0;
             output_setup.er = m_er;
             output_setup.d = 80e-3;
-            output_setup.Zs = m_Zref;
+            output_setup.Zs = { m_Zref };
             output_setup.Zl.resize(m_freqs.size());
             for (int i = 0; i < m_freqs.size(); i++)
                 output_setup.Zl[i] = m_Zref * std::sqrt(m_split[i]);

@@ -8,6 +8,31 @@
 #include "simulation/NTL_sim.h"
 #include "optimisation/NTL_opt.h"
 
+namespace nlohmann {
+	template <>
+	struct adl_serializer<std::complex<double>> {
+		// Convert JSON to std::complex<double>
+		static void from_json(const json& j, std::complex<double>& value) {
+			if (j.is_array() && j.size() == 2) {
+				// Expects format: [real, imag]
+				value = std::complex<double>(j[0].get<double>(), j[1].get<double>());
+			}
+			else if (j.is_number()) {
+				// Expects format: real_number (implies imag = 0)
+				value = std::complex<double>(j.get<double>(), 0.0);
+			}
+			else {
+				throw json::type_error::create(302, "type must be number or array of 2 numbers", &j);
+			}
+		}
+
+		// Convert std::complex<double> to JSON (Optional, useful for debugging/saving)
+		static void to_json(json& j, const std::complex<double>& value) {
+			j = json::array({ value.real(), value.imag() });
+		}
+	};
+}
+
 
 namespace NTL::fh
 {

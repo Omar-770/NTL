@@ -14,14 +14,14 @@ namespace NTL
 	
 	struct zin_wrapper
 	{
-		zin_wrapper(sim& sim, const NTL& ntl, double Zl, const char* title)
+		zin_wrapper(sim& sim, const NTL& ntl, std::complex<double> Zl, const char* title)
 			: m_sim(sim), m_ntl(ntl), m_Zl(Zl), m_title(title) {};
 		QMainWindow* magnitude(mag mode = mag::abs);
 		QMainWindow* phase(enum class phase mode = phase::deg);
 
 	private:
 		sim& m_sim;
-		const NTL& m_ntl; double m_Zl;
+		const NTL& m_ntl; std::complex<double> m_Zl;
 		const char* m_title;
 		std::vector<std::complex<double>> data();
 		
@@ -29,7 +29,7 @@ namespace NTL
 
 	struct s_wrapper_2
 	{
-		s_wrapper_2(sim& sim, const NTL& ntl, double Zs, const std::vector<double>& Zl, 
+		s_wrapper_2(sim& sim, const NTL& ntl, const std::vector<std::complex<double>>& Zs, const std::vector<std::complex<double>>& Zl,
 			const std::vector<std::string>& labels, const char* title, int index)
 			: m_sim(sim), m_ntl(ntl), m_Zs(Zs), m_Zl(Zl), m_labels(labels), m_title(title), m_index(index) {
 		};
@@ -38,15 +38,15 @@ namespace NTL
 		QMainWindow* phase(enum class phase mode = phase::deg);
 	private:
 		sim& m_sim;
-		const NTL& m_ntl; double m_Zs; const std::vector<double>& m_Zl;
+		const NTL& m_ntl; const std::vector<std::complex<double>>& m_Zs; const std::vector<std::complex<double>>& m_Zl;
 		const std::vector<std::string>& m_labels; const char* m_title;
 		int m_index;
-		std::vector<std::complex<double>> data(double Zl);
+		std::vector<std::complex<double>> data(std::complex<double> Zs, std::complex<double> Zl);
 	};
 
 	struct s_wrapper_1
 	{
-		s_wrapper_1(sim& sim, const NTL& ntl, double Zs, const std::vector<double>& Zl,
+		s_wrapper_1(sim& sim, const NTL& ntl, const std::vector<std::complex<double>>& Zs, const std::vector<std::complex<double>>& Zl,
 			const std::vector<std::string>& labels, const char* title)
 			: m_sim(sim), m_ntl(ntl), m_Zs(Zs), m_Zl(Zl), m_labels(labels), m_title(title) {};
 
@@ -57,7 +57,7 @@ namespace NTL
 		std::vector<QMainWindow*> all(mag mode = mag::dB);
 	private:
 		sim& m_sim;
-		const NTL& m_ntl; double m_Zs; const std::vector<double>& m_Zl;
+		const NTL& m_ntl; const std::vector<std::complex<double>>& m_Zs; const std::vector<std::complex<double>>& m_Zl;
 		const std::vector<std::string>& m_labels; const char* m_title;
 	};
 
@@ -86,11 +86,11 @@ namespace NTL
 		QMainWindow* merge(const char* title = "NTL_sim");
 
 		QMainWindow* z_profile(const NTL& ntl, const char* title = "Impedance Z(z)", double step_size = 1e-4);
-		zin_wrapper zin(const NTL& ntl, double Zl, const char* title = "") { return zin_wrapper(*this, ntl, Zl, title); }
+		zin_wrapper zin(const NTL& ntl, std::complex<double> Zl, const char* title = "") { return zin_wrapper(*this, ntl, Zl, title); }
 
 		QMainWindow* w_h_profile(const NTL& ntl, const char* title = "W/H(z)", double step_size = 1e-4);
 
-		s_wrapper_1 sparam(const NTL& ntl, double Zs, const std::vector<double>& Zl,
+		s_wrapper_1 sparam(const NTL& ntl, const std::vector<std::complex<double>>& Zs, const std::vector<std::complex<double>>& Zl,
 			std::vector<std::string> labels = {}, const char* title = "") { return s_wrapper_1(*this, ntl, Zs, Zl, labels, title); }
 
 		std::vector<QMainWindow*> get_windows() const { return m_windows; }

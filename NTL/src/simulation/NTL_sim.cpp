@@ -17,7 +17,7 @@ namespace NTL
 
 	QMainWindow* zin_wrapper::magnitude(mag mode)
 	{
-		if (m_Zl < 1e-6)
+		if (std::abs(m_Zl) < 1e-6)
 			throw(std::invalid_argument("Invalid terminal impedances, Zin simulation " + std::string(m_title)));
 
 		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin >= m_sim.m_fmax)
@@ -46,7 +46,7 @@ namespace NTL
 
 	QMainWindow* zin_wrapper::phase(enum class phase mode)
 	{
-		if (m_Zl < 1e-6)
+		if (std::abs(m_Zl) < 1e-6)
 			throw(std::invalid_argument("Invalid terminal impedances, Zin simulation " + std::string(m_title)));
 
 		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin >= m_sim.m_fmax)
@@ -96,11 +96,14 @@ namespace NTL
 	QMainWindow* s_wrapper_2::magnitude(mag mode)
 	{
 		for(auto& z : m_Zl)
-			if (z < 1e-6)
+			if (std::abs(z) < 1e-6)
 				throw(std::invalid_argument("Invalid terminal impedances, Zin simulation " + std::string(m_title)));
 
 		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin >= m_sim.m_fmax)
 			throw(std::invalid_argument("Invalid frequency sweep " + std::string(m_title)));
+
+		if (m_Zs.size() != m_Zl.size())
+			throw std::invalid_argument("Zs and Zl vector sizes must match in S-param simulation");
 
 		std::vector<std::vector<std::pair<double, double>>> S;
 		std::vector<std::complex<double>> temp;
@@ -127,7 +130,7 @@ namespace NTL
 		
 		for (int i = 0; i < m_Zl.size(); i++)
 		{
-			temp = data(m_Zl[i]);
+			temp = data(m_Zs[i], m_Zl[i]);
 			auto it = temp.begin();
 			for (double f = m_sim.m_fmin; f < m_sim.m_fmax; f += m_sim.m_fstep)
 			{
@@ -156,11 +159,14 @@ namespace NTL
 	QMainWindow* s_wrapper_2::phase(enum class phase mode)
 	{
 		for (auto& z : m_Zl)
-			if (z < 1e-6)
+			if (std::abs(z) < 1e-6)
 				throw(std::invalid_argument("Invalid terminal impedances, Zin simulation " + std::string(m_title)));
 
 		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin >= m_sim.m_fmax)
 			throw(std::invalid_argument("Invalid frequency sweep " + std::string(m_title)));
+
+		if (m_Zs.size() != m_Zl.size())
+			throw std::invalid_argument("Zs and Zl vector sizes must match in S-param simulation");
 
 		std::vector<std::vector<std::pair<double, double>>> S;
 		std::vector<std::complex<double>> temp;
@@ -187,7 +193,7 @@ namespace NTL
 
 		for (int i = 0; i < m_Zl.size(); i++)
 		{
-			temp = data(m_Zl[i]);
+			temp = data(m_Zs[i], m_Zl[i]);
 			auto it = temp.begin();
 			for (double f = m_sim.m_fmin; f < m_sim.m_fmax; f += m_sim.m_fstep)
 			{
@@ -217,11 +223,14 @@ namespace NTL
 	{
 		// 1. Guard Clauses (Safety First)
 		for (auto& z : m_Zl)
-			if (z < 1e-6)
+			if (std::abs(z) < 1e-6)
 				throw(std::invalid_argument("Invalid terminal impedances, S-Param simulation"));
 
 		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin >= m_sim.m_fmax)
 			throw(std::invalid_argument("Invalid frequency sweep in S-Param simulation"));
+
+		if (m_Zs.size() != m_Zl.size())
+			throw std::invalid_argument("Zs and Zl vector sizes must match in S-param simulation");
 
 
 		std::vector<std::vector<std::pair<double, double>>> vS11, vS12, vS21, vS22;
@@ -250,11 +259,12 @@ namespace NTL
 
 		for (size_t i = 0; i < num_loads; i++)
 		{
-			double Zl_current = m_Zl[i];
+			std::complex<double> Zl_current = m_Zl[i];
+			std::complex<double> Zs_current = m_Zs[i];
 
 			for (double f = m_sim.m_fmin; f < m_sim.m_fmax; f += m_sim.m_fstep)
 			{
-				auto S = m_ntl.S_matrix(f, m_Zs, Zl_current);
+				auto S = m_ntl.S_matrix(f, Zs_current, Zl_current);
 
 				double v11 = std::abs(S(0, 0));
 				double v12 = std::abs(S(0, 1));
@@ -294,7 +304,7 @@ namespace NTL
 		return windows;
 	}
 
-	std::vector<std::complex<double>> s_wrapper_2::data(double Zl)
+	std::vector<std::complex<double>> s_wrapper_2::data(std::complex<double> Zs, std::complex<double> Zl)
 	{	
 		int first_index = m_index / 10;
 		int second_index = m_index % 10;
@@ -303,7 +313,7 @@ namespace NTL
 		temp.reserve((m_sim.m_fmax - m_sim.m_fmin) / m_sim.m_fstep + 1);
 		for (double f = m_sim.m_fmin; f < m_sim.m_fmax; f += m_sim.m_fstep)
 		{
-			temp.emplace_back(m_ntl.S_matrix(f, m_Zs, Zl)(first_index - 1, second_index - 1));
+			temp.emplace_back(m_ntl.S_matrix(f, Zs, Zl)(first_index - 1, second_index - 1));
 		}
 
 		return temp;

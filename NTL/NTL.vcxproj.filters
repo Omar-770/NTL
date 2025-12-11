@@ -42,6 +42,9 @@
     <ClCompile Include="src\optimisation\WPD_opt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\optimisation\WPD_opt_2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\models\ntl.h">
@@ -74,9 +77,13 @@
     <ClInclude Include="src\common\enums.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\optimisation\WPD_opt_2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\dir\wpd_setup1.json" />
     <None Include="..\dir\WPD1.json" />
+    <None Include="..\dir\setup1.json" />
   </ItemGroup>
 </Project>

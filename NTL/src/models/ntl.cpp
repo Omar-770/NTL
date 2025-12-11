@@ -40,7 +40,8 @@ namespace NTL
 		return Z0 * std::exp(Z);
 	}
 
-	std::complex<double> calculate_Zin(double Z0, double e_r, double d, const std::vector<double>& Cn, int M, double Zl, double f, int K)
+	std::complex<double> calculate_Zin(double Z0, double e_r, double d, const std::vector<double>& Cn, int M,
+		std::complex<double> Zl, double f, int K)
 	{
 		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, M, f, K);
 
@@ -50,7 +51,7 @@ namespace NTL
 		return Zin;
 	}
 
-	std::complex<double> calculate_Zin(const NTL& ntl, double Zl, double f, int K)
+	std::complex<double> calculate_Zin(const NTL& ntl, std::complex<double> Zl, double f, int K)
 	{
 		return calculate_Zin(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), Zl, f, K);
 	}
@@ -78,6 +79,15 @@ namespace NTL
 		double wh = calculate_W_H(z, e_r);
 		return (e_r + 1) / 2 + (e_r - 1) / 2 * ((std::pow(1 + 12 / wh, -0.5) + ((wh < 1) ? 0.04 * (std::pow(1 - wh, 2)) : 0)));
 	}
+
+
+	//The Problem : calculate_Z contains a for loop(summing Sine / Cosine terms).
+	//Your optimizer calls calculate_T_matrix for every frequency($F$).calculate_T_matrix loops $K$ times.
+	//Total calculations per optimization step : $F \times K \times N_{ coeffs }$.The Reality : 
+	//The impedance profile $Z(z)$ and permittivity $\epsilon_{ eff }(z)$ depend only on the geometry($Cn$, $d$, $Z_0$), 
+	//not on the frequency $f$.The Fix :
+	//You should pre - calculate the vectors for $Z$ and $\epsilon_{ eff }$ once per optimization step,
+	//and pass them to a new overload of calculate_T_matrix.This will significantly speed up your optimization loop.
 
 	matrix2x2cd calculate_T_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, int M, double f, int K)
 	{
@@ -231,7 +241,7 @@ namespace NTL
 	}
 
 	matrix2x2cd calculate_S_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, int M,
-		double f, double Zs, double Zl, int K)
+		double f, std::complex<double> Zs, std::complex<double> Zl, int K)
 	{
 		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, M, f, K);
 		std::complex<double> A = T(0, 0);
@@ -250,15 +260,16 @@ namespace NTL
 			return S;
 		}
 
+		double norm_factor = 2.0 * std::sqrt(Zs.real() * Zl.real());
 		S(0, 0) = (A * Zl + B - C * Zs * Zl - D * Zs) / denominator;
-		S(0, 1) = (2.0 * (A * D - B * C) * std::sqrt(Zs * Zl)) / denominator;
-		S(1, 0) = (2.0 * std::sqrt(Zs * Zl)) / denominator;
 		S(1, 1) = (-A * Zl + B - C * Zs * Zl + D * Zs) / denominator;
+		S(0, 1) = ((A * D - B * C) * norm_factor) / denominator;
+		S(1, 0) = (norm_factor) / denominator;
 
 		return S;
 	}
 
-	matrix2x2cd calculate_S_matrix(const NTL& ntl, double f, double Zs, double Zl, int K)
+	matrix2x2cd calculate_S_matrix(const NTL& ntl, double f, std::complex<double> Zs, std::complex<double> Zl, int K)
 	{
 		return calculate_S_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), f, Zs, Zl, K);
 	}
@@ -301,7 +312,7 @@ namespace NTL
 
 	}
 
-	std::complex<double> NTL::Zin(double Zl, double f, int K) const
+	std::complex<double> NTL::Zin(std::complex<double> Zl, double f, int K) const
 	{
 		return calculate_Zin(*this, Zl, f, K);
 	}
@@ -352,7 +363,7 @@ namespace NTL
 		return calculate_T_matrix(*this, f, K);
 	}
 
-	matrix2x2cd NTL::S_matrix(double f, double Zs, double Zl, int K) const
+	matrix2x2cd NTL::S_matrix(double f, std::complex<double> Zs, std::complex<double> Zl, int K) const
 	{
 		return calculate_S_matrix(*this, f, Zs, Zl, K);
 	}
@@ -363,7 +374,7 @@ namespace NTL
 	}
 
 
-	std::complex<double> NTL::S11(double f, double Zs, double Zl, int K) const
+	std::complex<double> NTL::S11(double f, std::complex<double> Zs, std::complex<double> Zl, int K) const
 	{
 		return calculate_S_matrix(*this, f, Zs, Zl, K)(0, 0);
 	}

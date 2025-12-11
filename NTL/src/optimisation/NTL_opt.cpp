@@ -31,8 +31,8 @@ namespace NTL
 		er = j.at("er").get<double>();
 		d = j.at("d").get<double>();
 		M = j.at("M").get<double>();
-		Zs = j.at("Zs").get<double>();
-		Zl = j.at("Zl").get<std::vector<double>>();
+		Zs = j.at("Zs").get<std::vector<std::complex<double>>>();
+		Zl = j.at("Zl").get<std::vector<std::complex<double>>>();
 		freqs = j.at("freqs").get<std::vector<double>>();
 		K = j.at("K").get<double>();
 		Z_min = j.at("Z_min").get<double>();
@@ -87,22 +87,31 @@ namespace NTL
 
 		if (m_M > m_N)
 			throw(std::invalid_argument("Sine terms must be fewer or equal to the number of terms"));
-		if (m_Zl.size() != 1 && (m_Zl.size() < m_freqs.size() || m_Zl.size() > m_freqs.size()))
-			throw(std::invalid_argument("Number of load impedances & frequency points mismatch"));
 
+		if (m_Zl.size() != 1 && m_Zl.size() != m_freqs.size())
+			throw std::invalid_argument("Zl size must be 1 or equal to frequencies count");
+		if (m_Zs.size() != 1 && m_Zs.size() != m_freqs.size())
+			throw std::invalid_argument("Zs size must be 1 or equal to frequencies count");			
 		if (m_Zl.size() == 1)
 		{
 			m_Zl.resize(m_freqs.size());
 			for (int i = 1; i < m_Zl.size(); i++)
 				m_Zl[i] = m_Zl[0];
 		}
+		if (m_Zs.size() == 1)
+		{
+			m_Zs.resize(m_freqs.size());
+			for (int i = 1; i < m_Zs.size(); i++)
+				m_Zs[i] = m_Zs[0];
+		}
 
 		if (m_Z0 < 1e-6 || m_er < 1e-6 || m_d < 1e-6)
 			throw(std::invalid_argument("Invalid NTL physical charachteristics"));
-		if (m_Zs < 1e-6)
-			throw(std::invalid_argument("Invalid source impedance"));
+		for (auto& z : m_Zs)
+			if (std::abs(z) < 1e-6)
+				throw(std::invalid_argument("Invalid source impedance(s)"));
 		for (auto& z : m_Zl)
-			if (z < 1e-6)
+			if (std::abs(z) < 1e-6)
 				throw(std::invalid_argument("Invalid load impedance(s)"));
 		if (m_freqs.empty())
 			throw(std::invalid_argument("Empty frequency vector"));
@@ -202,13 +211,14 @@ namespace NTL
 			for (int i = 0; i < m_freqs.size(); i++)
 			{
 				double f = m_freqs[i];
-				double Zl = m_Zl[i];
+				std::complex<double> Zl = m_Zl[i];
+				std::complex<double> Zs = m_Zs[i];
 
 				matrix2x2cd T = calculate_T_matrix(m_Z0, m_er, m_d, Cn, m_M, f, m_K);
 
 				std::complex<double> a = T(0, 0), b = T(0, 1), c = T(1, 0), d = T(1, 1);
 				std::complex<double> Zin = (Zl * a + b) / (Zl * c + d);
-				std::complex<double> gamma = (Zin - m_Zs) / (Zin + m_Zs);
+				std::complex<double> gamma = (Zin - std::conj(Zs)) / (Zin + Zs);
 				thread_sum_squares += std::pow(std::norm(gamma), 2);
 			}
 
@@ -218,7 +228,7 @@ namespace NTL
 			}
 		}
 
-		return std::sqrt(sum_squares);
+		return sum_squares;
 	}
 
 	void opt::equality_constraints(unsigned m, double* res, unsigned n, const double* Cn) const
@@ -259,7 +269,8 @@ namespace NTL
 			for (int i = 0; i < F; i++)
 			{
 				double f = m_freqs[i];
-				double Zl = m_Zl[i];
+				std::complex<double> Zl = m_Zl[i];
+				std::complex<double> Zs = m_Zs[i];
 
 				auto [T, dT] = calculate_T_matrix_with_grad(m_Z0, m_er, m_d, Cn, m_M, f, m_K);
 
@@ -272,10 +283,9 @@ namespace NTL
 				std::complex<double> den = C * Zl + D;
 
 				std::complex<double> Zin = num / den;
-				std::complex<double> Gamma = (Zin - m_Zs) / (Zin + m_Zs);
-				std::complex<double> multiplication_factor = 8.0 * std::norm(Gamma) * m_Zs / (den * std::pow(Zin + m_Zs, 2));
-
-				thread_sum_squares += std::pow(std::norm(Gamma), 2);
+				std::complex<double> gamma = (Zin - std::conj(Zs)) / (Zin + Zs);
+				std::complex<double> multiplication_factor = 8.0 * std::norm(gamma) * Zs.real() / (den * std::pow(Zin + Zs, 2));
+				thread_sum_squares += std::pow(std::norm(gamma), 2);
 				
 
 				for (int n = 0; n < N; n++)
@@ -284,10 +294,10 @@ namespace NTL
 					std::complex<double> dB = dT[n](0, 1);
 					std::complex<double> dC = dT[n](1, 0);
 					std::complex<double> dD = dT[n](1, 1);
-					std::complex<double> dGamma = Zl * dA + dB - Zin * (Zl * dC + dD);
-					dGamma *= multiplication_factor;
+					std::complex<double> dgamma = Zl * dA + dB - Zin * (Zl * dC + dD);
+					dgamma *= multiplication_factor;
 
-					thread_grad[n] +=  (Gamma.real() * dGamma.real() + Gamma.imag() * dGamma.imag());
+					thread_grad[n] +=  (gamma.real() * dgamma.real() + gamma.imag() * dgamma.imag());
 
 				}
 			}

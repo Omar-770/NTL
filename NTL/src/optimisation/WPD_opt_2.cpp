@@ -78,8 +78,8 @@ namespace WPD
         //out2 Z0 -> sqrt(split) * Zref
         //out3 Z0 -> Zref / sqrt(split)
 
-        std::vector<double> out2_Zl(m_F);
-        std::vector<double> out3_Zl(m_F);             
+        std::vector<std::complex<double>> out2_Zl(m_F);
+        std::vector<std::complex<double>> out3_Zl(m_F);
             
         for (int i = 0; i < m_F; i++)
         {
@@ -96,8 +96,8 @@ namespace WPD
         m_out3 = m_ntl_opt[1]->optimise(mode).ntl;
 
         /// Intermediate impedance
-        std::vector<double> out2_Zin(m_F);
-        std::vector<double> out3_Zin(m_F);
+        std::vector<std::complex<double>> out2_Zin(m_F);
+        std::vector<std::complex<double>> out3_Zin(m_F);
 
         for (int i = 0; i < m_F; i++)
         {
