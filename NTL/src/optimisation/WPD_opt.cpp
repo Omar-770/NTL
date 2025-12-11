@@ -74,9 +74,9 @@ namespace WPD
             { "Z_min", Z_min },
             { "Z_max", Z_max },
             { "Z_at_0_2", Z_at_0_2 },
-            { "Z_at_0_2", Z_at_d_2 },
+            { "Z_at_d_2", Z_at_d_2 },
             { "Z_at_0_3", Z_at_0_3 },
-            { "Z_at_0_3", Z_at_d_3 },
+            { "Z_at_d_3", Z_at_d_3 },
             { "R_min", R_min },
             { "R_max", R_max },
             {"matching_dB", matching_dB},
@@ -142,6 +142,8 @@ namespace WPD
         m_N2 = m_N / 2;
         m_N3 = m_N2;
 
+        m_lb.resize(m_N);
+        m_ub.resize(m_N);
         m_lb[m_N - 1] = m_R_min;
         m_ub[m_N - 1] = m_R_max;
 
@@ -158,7 +160,7 @@ namespace WPD
         m_ntl3_out = output3;
     }
 
-    opt_result opt::optimise(console mode)
+    opt_result opt::optimise(console mode, bool output_d)
     {
         bool out = (mode == console::active);
         auto start_time = std::chrono::high_resolution_clock::now();
@@ -176,7 +178,7 @@ namespace WPD
             output_setup.GBL_MAX = 350000 * 2;
             output_setup.LCL_MAX = 50000 * 2;
             output_setup.accepted_error = 1e-5;
-            output_setup.max_attempts = 20;
+            output_setup.max_attempts = 10;
             output_setup.Z0 = m_Z0;
             output_setup.er = m_er;
             output_setup.d = 80e-3;
@@ -192,10 +194,14 @@ namespace WPD
             output_setup.Z_at_d = m_Zref;            
 
             {
-                NTL::opt output2_opt(output_setup);
                 if (out)
                     std::cout << "\nOptimising port2 output transformer...\n";
-                m_ntl2_out = output2_opt.optimise(mode).ntl;
+                NTL::opt output2_opt(output_setup);
+                
+                if(output_d)
+                    m_ntl2_out = output2_opt.optimise_d(mode).ntl;
+                else
+                    m_ntl2_out = output2_opt.optimise(mode).ntl;
             }
 
             for (int i = 0; i < m_freqs.size(); i++)
@@ -203,8 +209,11 @@ namespace WPD
             {
                 if (out)
                     std::cout << "\nOptimising port3 output transformer...\n";
-                NTL::opt output3_opt(output_setup);
-                m_ntl3_out = output3_opt.optimise(mode).ntl;
+                NTL::opt output3_opt(output_setup);                                 
+                if (output_d)
+                    m_ntl3_out = output3_opt.optimise_d(mode).ntl;
+                else
+                    m_ntl3_out = output3_opt.optimise(mode).ntl;
             }
             
         }
@@ -237,7 +246,77 @@ namespace WPD
               std::cout << "*** WPD Optimisation finished in " << elapsed.count() / 60.0 << " minutes" << std::endl;
   
         
-        return { {result.optimised_cn, result.final_error, result.number_of_attempts}, wpd, m_ntl2_out, m_ntl3_out };
+        return { result, wpd, m_ntl2_out, m_ntl3_out };
+    }
+
+    void opt::print_config() const
+    {
+        std::cout << "========== WPD OPTIMISER CONFIGURATION ==========\n";
+
+        std::cout << "[Physical Constraints]\n";
+        std::cout << "  Z0:      " << m_Z0 << " Ohm\n";
+        std::cout << "  er:      " << m_er << "\n";
+        std::cout << "  d:       " << m_d << " m\n";
+        std::cout << "  M:       " << m_M << " (Sine Terms)\n";
+        std::cout << "  Zref:    " << m_Zref << " Ohm\n";
+
+        std::cout << "\n[Search Space]\n";
+        std::cout << "  N2 (Arm2 Coeffs): " << m_N2 << "\n";
+        std::cout << "  N3 (Arm3 Coeffs): " << m_N3 << "\n";
+        std::cout << "  Z Range: [" << m_Z_min << ", " << m_Z_max << "] Ohm\n";
+        std::cout << "  R Range: [" << m_R_min << ", " << m_R_max << "] Ohm\n";
+
+        std::cout << "\n[Objectives]\n";
+        std::cout << "  Matching Target:  " << m_matching_dB << " dB (Linear: " << m_matching_abs << ")\n";
+        std::cout << "  Isolation Target: " << m_isolation_dB << " dB (Linear: " << m_isolation_abs << ")\n";
+
+        std::cout << "\n[Frequencies & Split]\n";
+        std::cout << "  Points: " << m_freqs.size() << "\n";
+        std::cout << "  K (integration steps): " << m_K << "\n";
+
+        // Print table of Frequency vs Split Targets
+        std::cout << "  Index | Freq (GHz) | Split Ratio | Target S12 (abs) | Target S13 (abs)\n";
+        std::cout << "  ---------------------------------------------------------------------\n";
+        for (size_t i = 0; i < m_freqs.size(); ++i)
+        {
+            double f_ghz = m_freqs[i] / 1e9;
+            std::cout << "  " << i << "     | "
+                << f_ghz << "        | "
+                << m_split[i] << "         | ";
+
+            if (i < m_split_abs.size())
+                std::cout << m_split_abs[i][0] << "           | " << m_split_abs[i][1];
+            else
+                std::cout << "N/A";
+
+            std::cout << "\n";
+        }
+
+        std::cout << "\n[Output Transformers (Pre-Solved)]\n";
+        auto print_ntl_summary = [](const std::string& name, const NTL::NTL& ntl) {
+            std::cout << "  " << name << ": ";
+            if (ntl.get_d() > 0)
+                std::cout << "Active (d=" << ntl.get_d() << ", N=" << ntl.get_Cn().size() << ")\n";
+            else
+                std::cout << "None/Passthrough\n";
+            };
+        print_ntl_summary("NTL2 Out", m_ntl2_out);
+        print_ntl_summary("NTL3 Out", m_ntl3_out);
+
+        std::cout << "\n[Load Impedances (Zl) - derived]\n";
+        // Just print the first few to avoid screen spam if many frequencies
+        int max_print = std::min<int>(5, m_Zl.size());
+        for (int i = 0; i < max_print; ++i)
+        {
+            std::cout << "  f[" << i << "]: "
+                << "Zl1=" << m_Zl[i][0] << ", "
+                << "Zl2=" << m_Zl[i][1] << ", "
+                << "Zl3=" << m_Zl[i][2] << "\n";
+        }
+        if (m_Zl.size() > max_print)
+            std::cout << "  ... (" << m_Zl.size() - max_print << " more hidden)\n";
+
+        std::cout << "=================================================\n" << std::endl;
     }
 
     double opt::min_objective(const std::vector<double>& Cn) const

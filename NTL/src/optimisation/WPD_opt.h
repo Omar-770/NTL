@@ -13,6 +13,7 @@
 namespace WPD
 {
 	class opt;
+	class opt2;
 	struct opt_setup;
 	struct opt_result;
 
@@ -62,8 +63,9 @@ namespace WPD
 		opt(const opt_setup& setup);
 		opt(const opt_setup& setup, const NTL::NTL& output2, const NTL::NTL& output3);
 
-		opt_result optimise(console mode = console::active);
-
+		opt_result optimise(console mode = console::active, bool output_d = false);
+	
+		void print_config() const;
 
 	private:
 		double m_Z0;
