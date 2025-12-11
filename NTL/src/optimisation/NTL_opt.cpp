@@ -117,12 +117,12 @@ namespace NTL
 	opt_result opt::optimise(console mode)
 	{
 		bool out = (mode == console::active) ? true : false;
-		NTL ntl(m_Z0, m_er, m_d);
 		auto start_time = std::chrono::high_resolution_clock::now();
 		optimiser_result result = run_optimiser(mode);
 		auto end_time = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed = end_time - start_time;
-		ntl.set_Cn(result.optimised_cn);
+		NTL ntl(m_Z0, m_er, m_d, result.optimised_cn, m_M);
+		
 
 		if (out)
 			std::cout << "*** Optimisation finished in " << elapsed.count() / 60.0 << " minutes" << std::endl;
@@ -131,9 +131,7 @@ namespace NTL
 
 	opt_result opt::optimise_d(double resolution, console mode)
 	{
-		bool out = (mode == console::active) ? true : false;
-
-		NTL ntl(m_Z0, m_er, m_d);
+		bool out = (mode == console::active) ? true : false;		
 
 		double init_d = m_d;
 		int init_max_attempts = m_max_attempts;
@@ -172,8 +170,7 @@ namespace NTL
 		auto end_time = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed = end_time - start_time;
 
-		ntl.set_d(m_d);
-		ntl.set_Cn(new_result.optimised_cn);
+		NTL ntl(m_Z0, m_er, m_d, new_result.optimised_cn, m_M);
 
 		if (out)
 		{
