@@ -37,7 +37,7 @@ namespace NTL
 
 	optimiser::optimiser(const optimiser_setup& setup) : m_N(setup.N), m_lb(setup.lb), m_ub(setup.ub), m_toll_bounds(setup.toll_bounds),
 		m_toll_z(setup.toll_z), m_GBL_MAX(setup.GBL_MAX), m_LCL_MAX(setup.LCL_MAX), m_accepted_error(setup.accepted_error),
-		m_max_attempts(setup.max_attempts)
+		m_max_attempts(setup.max_attempts), m_use_local_grad_free(false)
 	{
 		if (m_N == 0 || m_lb.empty() || m_ub.empty() || m_toll_bounds.empty() || m_toll_z.empty())
 			throw(std::invalid_argument("Incomplete optimisation setup"));
@@ -106,41 +106,74 @@ namespace NTL
 			if (global_minf > m_accepted_error)
 			{
 				// --- 2. LOCAL REFINEMENT PHASE ---
-				if (output)
-					std::cout << "\n--- Starting Local Refinement Phase (using LD_MMA) ---" << std::endl;
-				nlopt::opt local_optimizer(nlopt::LD_AUGLAG, m_N);
-				//nlopt::opt local_optimizer(nlopt::LN_COBYLA, N);
-				local_optimizer.set_lower_bounds(m_lb);
-				local_optimizer.set_upper_bounds(m_ub);
 
+				// Use a pointer so we can initialize with different algorithms dynamically
+				std::unique_ptr<nlopt::opt> local_opt_ptr;
 
-				nlopt::opt inner_optimizer(nlopt::LD_MMA, m_N);
-				inner_optimizer.set_ftol_rel(1e-7);
-				inner_optimizer.set_xtol_rel(1e-7);
+				if (m_use_local_grad_free)
+				{
+					if (output)
+						std::cout << "\n--- Starting Local Refinement Phase (using LN_COBYLA) ---" << std::endl;
 
-				local_optimizer.set_local_optimizer(inner_optimizer);
-				local_optimizer.set_min_objective([](const std::vector<double>& Cn, std::vector<double>& grad, void* data) -> double {
-					return (static_cast<optimiser*>(data))->objective_with_fd_gradient(Cn, grad, data);
-					}, this);
-				local_optimizer.add_equality_mconstraint([](unsigned m, double* res, unsigned n, const double* x, double* grad, void* data) {
+					// LN_COBYLA is Gradient-Free and supports constraints
+					local_opt_ptr = std::make_unique<nlopt::opt>(nlopt::LN_COBYLA, m_N);
+
+					// Set Objective: Use min_objective (Calculates value only, ignores gradient)
+					local_opt_ptr->set_min_objective([](const std::vector<double>& Cn, std::vector<double>& grad, void* data) -> double {
+						// For COBYLA, 'grad' is empty/unused. We just call the value-only function.
+						return (static_cast<optimiser*>(data))->min_objective(Cn);
+						}, this);
+				}
+				else
+				{
+					if (output)
+						std::cout << "\n--- Starting Local Refinement Phase (using LD_MMA) ---" << std::endl;
+
+					// LD_AUGLAG with Inner LD_MMA (Gradient-Based)
+					local_opt_ptr = std::make_unique<nlopt::opt>(nlopt::LD_AUGLAG, m_N);
+
+					nlopt::opt inner_optimizer(nlopt::LD_MMA, m_N);
+					inner_optimizer.set_ftol_rel(1e-7);
+					inner_optimizer.set_xtol_rel(1e-7);
+					local_opt_ptr->set_local_optimizer(inner_optimizer);
+
+					// Set Objective: Use objective_with_fd_gradient (Calculates value + gradient)
+					local_opt_ptr->set_min_objective([](const std::vector<double>& Cn, std::vector<double>& grad, void* data) -> double {
+						return (static_cast<optimiser*>(data))->objective_with_fd_gradient(Cn, grad, data);
+						}, this);
+				}
+
+				// --- Common Setup (Bounds & Constraints) ---
+				// Note: We use arrow operator (->) because local_opt_ptr is a pointer
+
+				local_opt_ptr->set_lower_bounds(m_lb);
+				local_opt_ptr->set_upper_bounds(m_ub);
+				local_opt_ptr->set_ftol_rel(1e-7);
+				local_opt_ptr->set_xtol_rel(1e-7);
+				local_opt_ptr->set_maxeval(m_LCL_MAX);
+
+				// Add Constraints
+				// Note: Your existing constraint lambdas ignore the 'grad' parameter, 
+				// so they are safe to use for both Gradient (LD) and Gradient-Free (LN) algorithms.
+
+				local_opt_ptr->add_equality_mconstraint([](unsigned m, double* res, unsigned n, const double* x, double* grad, void* data) {
 					(*static_cast<optimiser*>(data)).equality_constraints(m, res, n, x);
 					}, this, m_toll_bounds);
-				local_optimizer.add_inequality_mconstraint([](unsigned m, double* res, unsigned n, const double* Cn, double*, void* data) {
+
+				local_opt_ptr->add_inequality_mconstraint([](unsigned m, double* res, unsigned n, const double* Cn, double*, void* data) {
 					(*static_cast<optimiser*>(data)).inequality_constraints_Zmax(m, res, n, Cn);
 					}, this, m_toll_z);
-				local_optimizer.add_inequality_mconstraint([](unsigned m, double* res, unsigned n, const double* Cn, double*, void* data) {
+
+				local_opt_ptr->add_inequality_mconstraint([](unsigned m, double* res, unsigned n, const double* Cn, double*, void* data) {
 					(*static_cast<optimiser*>(data)).inequality_constraints_Zmin(m, res, n, Cn);
 					}, this, m_toll_z);
 
-				local_optimizer.set_ftol_rel(1e-7);
-				local_optimizer.set_xtol_rel(1e-7);
-				local_optimizer.set_maxeval(m_LCL_MAX);
-
+				// --- Execution ---
 				best_Cn_this_attempt = Cn_this_attempt;
 
 				try
 				{
-					local_optimizer.optimize(best_Cn_this_attempt, final_minf_this_attempt);
+					local_opt_ptr->optimize(best_Cn_this_attempt, final_minf_this_attempt);
 					if (output)
 						std::cout << "Local refinement finished. Error for this attempt: " << final_minf_this_attempt << std::endl;
 				}
@@ -150,7 +183,6 @@ namespace NTL
 					attempt++;
 					continue;
 				}
-
 			}
 			else
 			{

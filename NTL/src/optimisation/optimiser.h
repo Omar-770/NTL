@@ -4,6 +4,7 @@
 #include <nlopt.hpp>
 #include <omp.h>
 #include <nlohmann/json.hpp>
+#include <memory>
 #include "models/ntl.h"
 #include "common/helpers.h"
 
@@ -64,6 +65,7 @@ namespace NTL
 		double m_GBL_MAX;
 		double m_LCL_MAX;	
 		
+		bool m_use_local_grad_free;
 
 	private:
 		//nlopt functions
