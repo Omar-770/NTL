@@ -56,6 +56,22 @@ namespace NTL
 		return calculate_Zin(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), Zl, f, K);
 	}
 
+	std::complex<double> calculate_Zout(double Z0, double e_r, double d, const std::vector<double>& Cn, int M,
+		std::complex<double> Zs, double f, int K)
+	{
+		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, M, f, K);
+
+		std::complex<double> A = T(0, 0), B = T(0, 1), C = T(1, 0), D = T(1, 1);
+		std::complex<double> Zout = (D * Zs + B) / (C * Zs + A);
+
+		return Zout;
+	}
+
+	std::complex<double> calculate_Zout(const NTL& ntl, std::complex<double> Zs, double f, int K)
+	{
+		return calculate_Zout(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), Zs, f, K);
+	}
+
 
 	double calculate_W_H(double z, double e_r) // z is IMPEDANCE
 	{
@@ -315,6 +331,11 @@ namespace NTL
 	std::complex<double> NTL::Zin(std::complex<double> Zl, double f, int K) const
 	{
 		return calculate_Zin(*this, Zl, f, K);
+	}
+
+	std::complex<double> NTL::Zout(std::complex<double> Zs, double f, int K) const
+	{
+		return calculate_Zout(*this, Zs, f, K);
 	}
 
 	double NTL::W_H(double z) const //function of position z

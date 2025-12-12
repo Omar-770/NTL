@@ -26,7 +26,10 @@ namespace NTL
 
 	std::complex<double> calculate_Zin(double Z0, double e_r, double d, const std::vector<double>& Cn,
 		int M, std::complex<double> Zl, double f, int K = 50);
-	std::complex<double> calculate_Zin(const NTL& ntl, std::complex<double> Zl, double f, int K = 50);
+	std::complex<double> calculate_Zin(const NTL& ntl, std::complex<double> Zs, double f, int K = 50);
+	std::complex<double> calculate_Zout(double Z0, double e_r, double d, const std::vector<double>& Cn,
+		int M, std::complex<double> Zl, double f, int K = 50);
+	std::complex<double> calculate_Zout(const NTL& ntl, std::complex<double> Zs, double f, int K = 50);
 
 	double calculate_W_H(double z, double e_r);
 	double calculate_er_eff(double z, double e_r);
@@ -83,6 +86,7 @@ namespace NTL
 		//impedance profiles
 		double Z(double z) const;
 		std::complex<double> Zin(std::complex<double> Zl, double f, int K = 50) const;
+		std::complex<double> Zout(std::complex<double> Zs, double f, int K = 50) const;
 
 		double W_H(double z) const;
 		double er_eff(const double& z) const;
@@ -118,6 +122,7 @@ namespace NTL
 		void set_er(const double& er) { m_er = er; };
 		void set_d(const double& d) { m_d = d; };
 		void set_Cn(const std::vector<double>& Cn) { m_Cn = Cn; };
+		void set_M(const int& M) { m_M = M; };
 
 		double get_Z0() const { return m_Z0; };
 		double get_er() const { return m_er; };
