@@ -150,7 +150,12 @@ namespace WPD
         m_matching_abs = std::pow(10, m_matching_dB / 20);
         m_isolation_abs = std::pow(10, m_isolation_dB / 20);            
 
-        omp_set_num_threads(std::min<int>(m_freqs.size(), 11));          
+        int hw_threads = std::thread::hardware_concurrency();
+        if (hw_threads == 0) hw_threads = 4;
+
+        int m_F = m_freqs.size();
+
+        omp_set_num_threads(std::min<int>(m_F, hw_threads));
     }
 
     opt::opt(const opt_setup& setup, const NTL::NTL& output2, const NTL::NTL& output3)

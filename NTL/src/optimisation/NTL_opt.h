@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <algorithm>
+#include <thread>
 
 namespace NTL
 {

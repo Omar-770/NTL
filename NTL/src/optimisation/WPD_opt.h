@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <common/file_handler.h>
+#include <thread>
 
 namespace WPD
 {
