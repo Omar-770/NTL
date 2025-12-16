@@ -50,3 +50,17 @@ inline std::ostream& operator<<(std::ostream& stream, const std::vector<double>&
 
     return stream;
 }
+
+inline std::ostream& operator<<(std::ostream& stream, const std::vector<std::complex<double>>& vec)
+{
+    stream << '{';
+    for (int i = 0; i < vec.size(); i++)
+    {
+        stream << vec[i];
+        if (i < vec.size() - 1)
+            stream << ", ";
+    }
+    stream << '}';
+
+    return stream;
+}
