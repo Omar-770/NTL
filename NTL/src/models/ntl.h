@@ -24,31 +24,44 @@ namespace NTL
 	double calculate_Z(const NTL& ntl, double z);
 	double calculate_Z(const double* Cn, const size_t& n, const size_t& m, const double& Z0, const double& d, const double& z); //for nlopt
 
-	std::complex<double> calculate_Zin(double Z0, double e_r, double d, const std::vector<double>& Cn,
+	std::complex<double> calculate_Zin(double Z0, double er, double d, const std::vector<double>& Cn,
 		int M, std::complex<double> Zl, double f, int K = 50);
 	std::complex<double> calculate_Zin(const NTL& ntl, std::complex<double> Zs, double f, int K = 50);
-	std::complex<double> calculate_Zout(double Z0, double e_r, double d, const std::vector<double>& Cn,
+
+	std::pair<std::complex<double>, std::vector<std::complex<double>>> calculate_Zin_with_grad(
+		double Z0, double er, double d, const std::vector<double>& Cn, int M,
+		std::complex<double> Zl, double f, int K = 50);
+
+	std::complex<double> calculate_Zout(double Z0, double er, double d, const std::vector<double>& Cn,
 		int M, std::complex<double> Zl, double f, int K = 50);
 	std::complex<double> calculate_Zout(const NTL& ntl, std::complex<double> Zs, double f, int K = 50);
 
-	double calculate_W_H(double z, double e_r);
-	double calculate_er_eff(double z, double e_r);
+	double calculate_W_H(double z, double er);
+	double calculate_er_eff(double z, double er);
 
-	matrix2x2cd calculate_T_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, int M,
+	matrix2x2cd calculate_T_matrix(double Z0, double er, double d, const std::vector<double>& Cn, int M,
 		double f, int K = 50);
 	matrix2x2cd calculate_T_matrix(const NTL& ntl, double f, int K = 50);
 
 	std::pair<matrix2x2cd, std::vector<matrix2x2cd>> calculate_T_matrix_with_grad(
 		double Z0, double er, double d, const std::vector<double>& Cn, int M, double f, int K = 50);
-	
 
-	matrix2x2cd calculate_S_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, int M,
+
+	matrix2x2cd calculate_S_matrix(double Z0, double er, double d, const std::vector<double>& Cn, int M,
 		double f, std::complex<double> Zs, std::complex<double> Zl, int K = 50);
 	matrix2x2cd calculate_S_matrix(const NTL& ntl, double f, std::complex<double> Zs, std::complex<double> Zl, int K = 50);
 
-	matrix2x2cd calculate_Y_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, int M,
+	matrix2x2cd calculate_Y_matrix(double Z0, double er, double d, const std::vector<double>& Cn, int M,
 		double f, int K = 50);
 	matrix2x2cd calculate_Y_matrix(const NTL& ntl, double f, int K = 50);
+
+	double calculate_electrical_length(double Z0, double er, double d, const std::vector<double>& Cn, int M,
+		double f, int K = 50);
+	double calculate_electrical_length(const NTL& ntl, double f, int K = 50);
+
+	std::complex<double> calculate_V_transfer(double Z0, double er, double d, const std::vector<double>& Cn, int M,
+		double f, std::complex<double> Zl, int K = 50);
+	std::complex<double> calculate_V_transfer(const NTL& ntl, double f, std::complex<double> Zl, int K = 50);
 
 
 	struct DATA
@@ -101,6 +114,9 @@ namespace NTL
 		matrix2x2cd T_matrix(double f, int K = 50) const;
 		matrix2x2cd S_matrix(double f, std::complex<double> Zs, std::complex<double> Zl, int K = 50) const;
 		matrix2x2cd Y_matrix(double f, int K = 50) const;
+
+		double electrical_length(double f, int K = 50) const;
+		std::complex<double> V_transfer(double f, std::complex<double> Zl, int K = 50) const;
 
 		//reflection coefficient
 		std::complex<double> S11(double f, std::complex<double> Zs, std::complex<double> Zl, int K = 50) const;

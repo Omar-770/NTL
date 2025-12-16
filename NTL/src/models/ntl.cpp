@@ -7,7 +7,7 @@ namespace NTL
 	{
 		double Z{};
 		double temp = 2 * M_PI * z / d;
-		
+
 
 		int N = Cn.size();
 		for (int n = 0; n < N - M; n++)
@@ -25,7 +25,7 @@ namespace NTL
 		return calculate_Z(ntl.get_Z0(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), z);
 	}
 
-	double calculate_Z(const double* Cn, const size_t& n, const size_t& m,const double& Z0, const double& d, const double& z)
+	double calculate_Z(const double* Cn, const size_t& n, const size_t& m, const double& Z0, const double& d, const double& z)
 	{
 		double Z{};
 		double temp = 2 * M_PI * z / d;
@@ -40,10 +40,10 @@ namespace NTL
 		return Z0 * std::exp(Z);
 	}
 
-	std::complex<double> calculate_Zin(double Z0, double e_r, double d, const std::vector<double>& Cn, int M,
+	std::complex<double> calculate_Zin(double Z0, double er, double d, const std::vector<double>& Cn, int M,
 		std::complex<double> Zl, double f, int K)
 	{
-		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, M, f, K);
+		matrix2x2cd T = calculate_T_matrix(Z0, er, d, Cn, M, f, K);
 
 		std::complex<double> A = T(0, 0), B = T(0, 1), C = T(1, 0), D = T(1, 1);
 		std::complex<double> Zin = (Zl * A + B) / (Zl * C + D);
@@ -56,10 +56,45 @@ namespace NTL
 		return calculate_Zin(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), Zl, f, K);
 	}
 
-	std::complex<double> calculate_Zout(double Z0, double e_r, double d, const std::vector<double>& Cn, int M,
+	std::pair<std::complex<double>, std::vector<std::complex<double>>> calculate_Zin_with_grad(
+		double Z0, double er, double d, const std::vector<double>& Cn, int M,
+		std::complex<double> Zl, double f, int K)
+	{
+		auto [T, dT] = calculate_T_matrix_with_grad(Z0, er, d, Cn, M, f, K);
+
+		std::complex<double> A = T(0, 0);
+		std::complex<double> B = T(0, 1);
+		std::complex<double> C = T(1, 0);
+		std::complex<double> D = T(1, 1);
+
+		std::complex<double> num = A * Zl + B;
+		std::complex<double> den = C * Zl + D;
+		std::complex<double> Zin = num / den;
+
+		size_t N_coeffs = Cn.size();
+		std::vector<std::complex<double>> dZin(N_coeffs);
+		std::complex<double> den_sq = den * den;
+
+		for (size_t i = 0; i < N_coeffs; ++i)
+		{
+			std::complex<double> dA = dT[i](0, 0);
+			std::complex<double> dB = dT[i](0, 1);
+			std::complex<double> dC = dT[i](1, 0);
+			std::complex<double> dD = dT[i](1, 1);
+
+			std::complex<double> dNum = dA * Zl + dB;
+			std::complex<double> dDen = dC * Zl + dD;
+
+			dZin[i] = (dNum * den - num * dDen) / den_sq;
+		}
+
+		return { Zin, dZin };
+	}
+
+	std::complex<double> calculate_Zout(double Z0, double er, double d, const std::vector<double>& Cn, int M,
 		std::complex<double> Zs, double f, int K)
 	{
-		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, M, f, K);
+		matrix2x2cd T = calculate_T_matrix(Z0, er, d, Cn, M, f, K);
 
 		std::complex<double> A = T(0, 0), B = T(0, 1), C = T(1, 0), D = T(1, 1);
 		std::complex<double> Zout = (D * Zs + B) / (C * Zs + A);
@@ -73,27 +108,27 @@ namespace NTL
 	}
 
 
-	double calculate_W_H(double z, double e_r) // z is IMPEDANCE
+	double calculate_W_H(double z, double er) // z is IMPEDANCE
 	{
-		double e_eff_cross = (e_r + 1) / 2.0 + (e_r - 1) / 2.0 * std::pow(1.0 + 12.0 / 2.0, -0.5);
+		double e_eff_cross = (er + 1) / 2.0 + (er - 1) / 2.0 * std::pow(1.0 + 12.0 / 2.0, -0.5);
 		double Z_cross = (60.0 / std::sqrt(e_eff_cross)) * std::log(8.0 / 2.0 + 2.0 / 4.0);
 
 		if (z >= Z_cross)
 		{
-			double A = (z / 60) * std::sqrt((e_r + 1) / 2) + ((e_r - 1) / (e_r + 1)) * (0.23 + (0.11 / e_r));
+			double A = (z / 60) * std::sqrt((er + 1) / 2) + ((er - 1) / (er + 1)) * (0.23 + (0.11 / er));
 			return (8 * std::exp(A)) / (std::exp(2 * A) - 2);
 		}
 		else
 		{
-			double B = (377 * M_PI) / (2 * z * std::sqrt(e_r));
-			return (2 / M_PI) * (B - 1 - std::log(std::abs(2 * B - 1)) + ((e_r - 1) / (2 * e_r)) * (std::log(std::abs(B - 1)) + 0.39 - (0.61 / e_r)));
+			double B = (377 * M_PI) / (2 * z * std::sqrt(er));
+			return (2 / M_PI) * (B - 1 - std::log(std::abs(2 * B - 1)) + ((er - 1) / (2 * er)) * (std::log(std::abs(B - 1)) + 0.39 - (0.61 / er)));
 		}
 	}
 
-	double calculate_er_eff(double z, double e_r) //function of impedance z
+	double calculate_er_eff(double z, double er) //function of impedance z
 	{
-		double wh = calculate_W_H(z, e_r);
-		return (e_r + 1) / 2 + (e_r - 1) / 2 * ((std::pow(1 + 12 / wh, -0.5) + ((wh < 1) ? 0.04 * (std::pow(1 - wh, 2)) : 0)));
+		double wh = calculate_W_H(z, er);
+		return (er + 1) / 2 + (er - 1) / 2 * ((std::pow(1 + 12 / wh, -0.5) + ((wh < 1) ? 0.04 * (std::pow(1 - wh, 2)) : 0)));
 	}
 
 
@@ -105,9 +140,9 @@ namespace NTL
 	//You should pre - calculate the vectors for $Z$ and $\epsilon_{ eff }$ once per optimization step,
 	//and pass them to a new overload of calculate_T_matrix.This will significantly speed up your optimization loop.
 
-	matrix2x2cd calculate_T_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, int M, double f, int K)
+	matrix2x2cd calculate_T_matrix(double Z0, double er, double d, const std::vector<double>& Cn, int M, double f, int K)
 	{
-		double _dz = d / K;		
+		double _dz = d / K;
 		matrix2x2cd temp_Ti;
 
 		auto calculate_Ti = [](matrix2x2cd& T, const double& Z, const double& f, const double& d, const double& e_r) {
@@ -121,14 +156,14 @@ namespace NTL
 			T(1, 1) = { cos_theta, 0 };
 			};
 
-		if(M == 0) // Even optimisation
+		if (M == 0) // Even optimisation
 		{
 			matrix2x2cd T_half = matrix2x2cd::Identity();
 			int half_K = K / 2;
 			for (int i = 0; i < half_K; i++)
 			{
 				double z = calculate_Z(Z0, d, Cn, M, (double(i) + 0.5) * _dz);
-				calculate_Ti(temp_Ti, z, f, _dz, calculate_er_eff(z, e_r));
+				calculate_Ti(temp_Ti, z, f, _dz, calculate_er_eff(z, er));
 				T_half *= temp_Ti;
 			}
 
@@ -142,17 +177,17 @@ namespace NTL
 			else
 			{
 				double z_mid = calculate_Z(Z0, d, Cn, M, (double(half_K) + 0.5) * _dz);
-				calculate_Ti(temp_Ti, z_mid, f, _dz, calculate_er_eff(z_mid, e_r));
+				calculate_Ti(temp_Ti, z_mid, f, _dz, calculate_er_eff(z_mid, er));
 				return T_half * temp_Ti * T_half_rev;
 			}
-		} 
+		}
 		else
 		{
 			matrix2x2cd T = matrix2x2cd::Identity();
 			for (int i = 0; i < K; i++)
 			{
 				double z = calculate_Z(Z0, d, Cn, M, (double(i) + 0.5) * _dz);
-				calculate_Ti(temp_Ti, z, f, _dz, calculate_er_eff(z, e_r));
+				calculate_Ti(temp_Ti, z, f, _dz, calculate_er_eff(z, er));
 				T *= temp_Ti;
 			}
 
@@ -187,10 +222,10 @@ namespace NTL
 		matrix2x2cd temp_T;
 		double dZ = 1e-6;
 
-		if(M == 0) // Even optimisaton
+		if (M == 0) // Even optimisaton
 		{
 			int half_K = (K + 1) / 2;
-			
+
 			// Calculate
 			for (int i = 0; i < half_K; i++)
 			{
@@ -218,8 +253,8 @@ namespace NTL
 			for (int i = 0; i < K; i++)
 			{
 				R[K - 1 - i] << L[i](1, 1), L[i](0, 1), L[i](1, 0), L[i](0, 0);
-			}			
-					
+			}
+
 		}
 		else
 		{
@@ -241,7 +276,7 @@ namespace NTL
 				L[i] = L[i - 1] * T[i - 1];
 				R[K - 1 - i] = T[K - i] * R[K - i];
 			}
-			
+
 		}
 
 		// Final 
@@ -250,16 +285,16 @@ namespace NTL
 			double zi = (double(k) + 0.5) * _dz;
 			for (int i = 0; i < N; i++)
 				dT_dCn[i] += L[k] * dT_dZ[k] * R[k] * Z[k] * (i < N - M ? std::cos(2 * M_PI * zi / d * double(i))
-																		: std::sin(2 * M_PI * zi / d * double(i - N + M + 1)));
+					: std::sin(2 * M_PI * zi / d * double(i - N + M + 1)));
 		}
 
 		return { L[K - 1] * T[K - 1], dT_dCn };
 	}
 
-	matrix2x2cd calculate_S_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, int M,
+	matrix2x2cd calculate_S_matrix(double Z0, double er, double d, const std::vector<double>& Cn, int M,
 		double f, std::complex<double> Zs, std::complex<double> Zl, int K)
 	{
-		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, M, f, K);
+		matrix2x2cd T = calculate_T_matrix(Z0, er, d, Cn, M, f, K);
 		std::complex<double> A = T(0, 0);
 		std::complex<double> B = T(0, 1);
 		std::complex<double> C = T(1, 0);
@@ -290,10 +325,10 @@ namespace NTL
 		return calculate_S_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), f, Zs, Zl, K);
 	}
 
-	matrix2x2cd calculate_Y_matrix(double Z0, double e_r, double d, const std::vector<double>& Cn, int M,
+	matrix2x2cd calculate_Y_matrix(double Z0, double er, double d, const std::vector<double>& Cn, int M,
 		double f, int K)
 	{
-		matrix2x2cd T = calculate_T_matrix(Z0, e_r, d, Cn, M, f, K);
+		matrix2x2cd T = calculate_T_matrix(Z0, er, d, Cn, M, f, K);
 		std::complex<double> A = T(0, 0);
 		std::complex<double> B = T(0, 1);
 		std::complex<double> C = T(1, 0);
@@ -317,6 +352,79 @@ namespace NTL
 	matrix2x2cd calculate_Y_matrix(const NTL& ntl, double f, int K)
 	{
 		return calculate_Y_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), f, K);
+	}
+
+	double calculate_electrical_length(double Z0, double er, double d, const std::vector<double>& Cn, int M, double f, int K)
+	{
+		double theta{};
+		double dz = d / K;
+		double z{};
+		double Z{};
+		double e_eff{};
+		double temp{ 2 * M_PI * f / M_C * dz };
+
+		if (M == 0)
+		{
+			int half_K = K / 2;
+			for (int i = 0; i < half_K; i++)
+			{
+				z = (double(i) + 0.5) * dz;
+				Z = calculate_Z(Z0, d, Cn, M, z);
+				e_eff = calculate_er_eff(Z, er);
+				theta += temp * std::sqrt(e_eff);
+			}
+
+			theta *= 2;
+
+			if (K % 2 == 1)
+			{
+				z = (half_K + 0.5) * dz;
+				Z = calculate_Z(Z0, d, Cn, M, z);
+				e_eff = calculate_er_eff(Z, er);
+				theta += temp * std::sqrt(e_eff);
+			}
+		}
+		else
+		{
+			for (int i = 0; i < K; i++)
+			{
+				z = (double(i) + 0.5) * dz;
+				Z = calculate_Z(Z0, d, Cn, M, z);
+				e_eff = calculate_er_eff(Z, er);
+				theta += temp * std::sqrt(e_eff);
+			}
+		}
+
+		return theta;
+	}
+
+	double calculate_electrical_length(const NTL& ntl, double f, int K)
+	{
+		return calculate_electrical_length(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), f, K);
+	}
+
+	std::complex<double> calculate_V_transfer(double Z0, double er, double d, const std::vector<double>& Cn, int M,
+		double f, std::complex<double> Zl, int K)
+	{
+		std::complex<double> H{};
+
+		//Vo/Vi = H
+		//Vi = AV0 + BIo
+		//1 = AH + BI0/Vi
+		//1 = AH + BV0/(Zl Vi)
+		//1 = AH + B/Zl H
+		//H = 1 / (A + B/Zl)
+
+		auto T = calculate_T_matrix(Z0, er, d, Cn, M, f, K);
+
+		H = 1.0 / (T(0, 0) + T(0, 1) / Zl);
+
+		return H;
+	}
+
+	std::complex<double> calculate_V_transfer(const NTL& ntl, double f, std::complex<double> Zl, int K)
+	{
+		return calculate_V_transfer(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), f, Zl, K);
 	}
 
 	/// CLASS_NTL_BEGIN
@@ -392,6 +500,16 @@ namespace NTL
 	matrix2x2cd NTL::Y_matrix(double f, int K) const
 	{
 		return calculate_Y_matrix(*this, f, K);
+	}
+
+	double NTL::electrical_length(double f, int K) const
+	{
+		return calculate_electrical_length(*this, f, K);
+	}
+
+	std::complex<double> NTL::V_transfer(double f, std::complex<double> Zl, int K) const
+	{
+		return calculate_V_transfer(*this, f, Zl, K);
 	}
 
 
