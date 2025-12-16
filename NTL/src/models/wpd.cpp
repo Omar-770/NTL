@@ -151,84 +151,158 @@ namespace WPD
 
         return { S, dS };
     }
-}
 
-namespace WPD
-{
-	matrix3x3cd calculate_Y_matrix(double Z0, double er, double d2, const std::vector<double>& Cn2,
-		double d3, const std::vector<double>& Cn3, int M, double R, double f, int K)
-	{
-		double G = 1 / R;
+    matrix3x3cd calculate_Y_matrix(double Z0, double er, double d2, const std::vector<double>& Cn2,
+        double d3, const std::vector<double>& Cn3, int M, double R, double f, int K)
+    {
+        double G = 1 / R;
 
-		matrix2x2cd y2, y3;
-		y2 = NTL::calculate_Y_matrix(Z0, er, d2, Cn2, M, f, K);
-		y3 = NTL::calculate_Y_matrix(Z0, er, d3, Cn3, M, f, K);
-		matrix2x2cd y_R
-		{
-			{G, -G},
-			{-G, G}
-		};
+        matrix2x2cd y2, y3;
+        y2 = NTL::calculate_Y_matrix(Z0, er, d2, Cn2, M, f, K);
+        y3 = NTL::calculate_Y_matrix(Z0, er, d3, Cn3, M, f, K);
+        matrix2x2cd y_R
+        {
+            {G, -G},
+            {-G, G}
+        };
 
 
-		matrix3x3cd Y = matrix3x3cd::Zero();
+        matrix3x3cd Y = matrix3x3cd::Zero();
 
-		Y(0, 0) += y2(0, 0);
-		Y(0, 1) += y2(0, 1);
-		Y(1, 0) += y2(1, 0);
-		Y(1, 1) += y2(1, 1);
+        Y(0, 0) += y2(0, 0);
+        Y(0, 1) += y2(0, 1);
+        Y(1, 0) += y2(1, 0);
+        Y(1, 1) += y2(1, 1);
 
-		Y(0, 0) += y3(0, 0);
-		Y(0, 2) += y3(0, 1);
-		Y(2, 0) += y3(1, 0);
-		Y(2, 2) += y3(1, 1);
+        Y(0, 0) += y3(0, 0);
+        Y(0, 2) += y3(0, 1);
+        Y(2, 0) += y3(1, 0);
+        Y(2, 2) += y3(1, 1);
 
-		Y(1, 1) += y_R(0, 0);
-		Y(1, 2) += y_R(0, 1);
-		Y(2, 1) += y_R(1, 0);
-		Y(2, 2) += y_R(1, 1);
+        Y(1, 1) += y_R(0, 0);
+        Y(1, 2) += y_R(0, 1);
+        Y(2, 1) += y_R(1, 0);
+        Y(2, 2) += y_R(1, 1);
 
-		return Y;
-	}
+        return Y;
+    }
 
-	matrix3x3cd calculate_Y_matrix(const WPD& wpd, double f, int K)
-	{
-		return calculate_Y_matrix(wpd.get_Z0(), wpd.get_er(), wpd.get_ntl2().get_d(),
-			wpd.get_ntl2().get_Cn(), wpd.get_ntl3().get_d(), wpd.get_ntl3().get_Cn(), wpd.get_M(),
-			wpd.get_R(), f, K);
-	}
+    matrix3x3cd calculate_Y_matrix(const WPD& wpd, double f, int K)
+    {
+        return calculate_Y_matrix(wpd.get_Z0(), wpd.get_er(), wpd.get_ntl2().get_d(),
+            wpd.get_ntl2().get_Cn(), wpd.get_ntl3().get_d(), wpd.get_ntl3().get_Cn(), wpd.get_M(),
+            wpd.get_R(), f, K);
+    }
 
-	matrix3x3cd calculate_S_matrix(double Z0, double er, double d2, const std::vector<double>& Cn2,
-		double d3, const std::vector<double>& Cn3, int M, double R, double f, std::array<std::complex<double>, 3> Zl, int K)
-	{
-		matrix3x3cd Y_wpd = calculate_Y_matrix(Z0, er, d2, Cn2, d3, Cn3, M, R, f, K);
-		matrix3x3cd Z_ref = matrix3x3cd::Zero();
-		Z_ref(0, 0) = Zl[0];
-		Z_ref(1, 1) = Zl[1];
-		Z_ref(2, 2) = Zl[2];
+    matrix3x3cd calculate_system_Y_matrix(const WPD& wpd, const NTL::NTL& out2, const NTL::NTL& out3, double f, int K)
+    {
+        // 1. Get Component Matrices
+        matrix3x3cd Y_core = wpd.Y_matrix(f, K); // Ports: Input, Junc2, Junc3
+        matrix2x2cd Y_t2 = out2.Y_matrix(f, K);
+        matrix2x2cd Y_t3 = out3.Y_matrix(f, K);
 
-		matrix3x3cd Y_ref = Z_ref.inverse();
-		
-		matrix3x3cd S = (Y_ref - Y_wpd) * (Y_ref + Y_wpd).inverse();
+        // 2. Map to 5x5 System Matrix
+        // Indices: 0=Input, 1=Junc2(Internal), 2=Junc3(Internal), 3=Out2, 4=Out3
+        matrix5x5cd Y_sys = matrix5x5cd::Zero();
+
+        // Stamp Core (Nodes 0, 1, 2)
+        Y_sys.block<3, 3>(0, 0) += Y_core;
+
+        // Stamp Transformer 2 (Connecting Junc2 [1] to Out2 [3])
+        // Y_t2 port 0 -> Junc2, port 1 -> Out2
+        Y_sys(1, 1) += Y_t2(0, 0); Y_sys(1, 3) += Y_t2(0, 1);
+        Y_sys(3, 1) += Y_t2(1, 0); Y_sys(3, 3) += Y_t2(1, 1);
+
+        // Stamp Transformer 3 (Connecting Junc3 [2] to Out3 [4])
+        // Y_t3 port 0 -> Junc3, port 1 -> Out3
+        Y_sys(2, 2) += Y_t3(0, 0); Y_sys(2, 4) += Y_t3(0, 1);
+        Y_sys(4, 2) += Y_t3(1, 0); Y_sys(4, 4) += Y_t3(1, 1);
+
+        // 3. Schur Complement to Eliminate Internal Nodes (1, 2)
+        // We want to keep External Nodes A = {0, 3, 4}
+        // We want to remove Internal Nodes B = {1, 2}
+
+        // Permutation is implicitly handled by extraction:
+        // A indices: 0, 3, 4
+        // B indices: 1, 2
+
+        // Construct Submatrices
+        Eigen::Matrix<std::complex<double>, 3, 3> Y_AA;
+        Y_AA << Y_sys(0, 0), Y_sys(0, 3), Y_sys(0, 4),
+            Y_sys(3, 0), Y_sys(3, 3), Y_sys(3, 4),
+            Y_sys(4, 0), Y_sys(4, 3), Y_sys(4, 4);
+
+        Eigen::Matrix<std::complex<double>, 2, 2> Y_BB;
+        Y_BB << Y_sys(1, 1), Y_sys(1, 2),
+            Y_sys(2, 1), Y_sys(2, 2);
+
+        Eigen::Matrix<std::complex<double>, 3, 2> Y_AB;
+        Y_AB << Y_sys(0, 1), Y_sys(0, 2),
+            Y_sys(3, 1), Y_sys(3, 2),
+            Y_sys(4, 1), Y_sys(4, 2);
+
+        Eigen::Matrix<std::complex<double>, 2, 3> Y_BA;
+        Y_BA = Y_AB.transpose(); // Since Y is symmetric for reciprocal networks
+
+        // Schur Reduction: Y_reduced = Y_AA - Y_AB * Y_BB^-1 * Y_BA
+        matrix3x3cd Y_external = Y_AA - Y_AB * Y_BB.inverse() * Y_BA;
+
+        return Y_external;
+    }
 
 
-		return S;
-	}
+    matrix3x3cd calculate_S_matrix(double Z0, double er, double d2, const std::vector<double>& Cn2,
+        double d3, const std::vector<double>& Cn3, int M, double R, double f, std::array<std::complex<double>, 3> Zl, int K)
+    {
+        matrix3x3cd Y_wpd = calculate_Y_matrix(Z0, er, d2, Cn2, d3, Cn3, M, R, f, K);
+        matrix3x3cd Z_ref = matrix3x3cd::Zero();
+        Z_ref(0, 0) = Zl[0];
+        Z_ref(1, 1) = Zl[1];
+        Z_ref(2, 2) = Zl[2];
 
-	matrix3x3cd calculate_S_matrix(const WPD& wpd, double f, std::array<std::complex<double>, 3> Zl, int K)
-	{
-		return calculate_S_matrix(wpd.get_Z0(), wpd.get_er(), wpd.get_ntl2().get_d(),
-			wpd.get_ntl2().get_Cn(), wpd.get_ntl3().get_d(), wpd.get_ntl3().get_Cn(), wpd.get_M(),
-			wpd.get_R(), f, Zl, K);
-	}
+        matrix3x3cd Y_ref = Z_ref.inverse();
 
-	/// CLASS_WPD_BEGIN
+        matrix3x3cd S = (Y_ref - Y_wpd) * (Y_ref + Y_wpd).inverse();
 
-	matrix3x3cd WPD::Y_matrix(double f, int K) const
-	{
-		return calculate_Y_matrix(*this, f, K);
-	}
-	matrix3x3cd WPD::S_matrix(double f, std::array<std::complex<double>, 3> Zl, int K) const
-	{
-		return calculate_S_matrix(*this, f, Zl, K);
-	}
+
+        return S;
+    }
+
+    matrix3x3cd calculate_S_matrix(const WPD& wpd, double f, std::array<std::complex<double>, 3> Zl, int K)
+    {
+        return calculate_S_matrix(wpd.get_Z0(), wpd.get_er(), wpd.get_ntl2().get_d(),
+            wpd.get_ntl2().get_Cn(), wpd.get_ntl3().get_d(), wpd.get_ntl3().get_Cn(), wpd.get_M(),
+            wpd.get_R(), f, Zl, K);
+    }
+
+    matrix3x3cd calculate_system_S_matrix(const WPD& wpd, std::complex<double> Zref, const NTL::NTL& out2, const NTL::NTL& out3, double f, int K)
+    {
+        matrix3x3cd Y_sys = calculate_system_Y_matrix(wpd, out2, out3, f, K);
+
+        // Standard S-parameter conversion
+        matrix3x3cd Z_ref = matrix3x3cd::Zero();
+        Z_ref(0, 0) = Zref;
+        Z_ref(1, 1) = Zref;
+        Z_ref(2, 2) = Zref;
+
+        matrix3x3cd Y_ref = Z_ref.inverse();
+        matrix3x3cd S = (Y_ref - Y_sys) * (Y_ref + Y_sys).inverse();
+
+        return S;
+    }
+
+    /// CLASS_WPD_BEGIN
+
+    matrix3x3cd WPD::Y_matrix(double f, int K) const
+    {
+        return calculate_Y_matrix(*this, f, K);
+    }
+    matrix3x3cd WPD::S_matrix(double f, std::array<std::complex<double>, 3> Zl, int K) const
+    {
+        return calculate_S_matrix(*this, f, Zl, K);
+    }
+    matrix3x3cd WPD::system_S_matrix(std::complex<double> Zref, const NTL::NTL& out2, const NTL::NTL& out3, double f, int K) const
+    {
+        return calculate_system_S_matrix(*this, Zref, out2, out3, f, K);
+    }
 }

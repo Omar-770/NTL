@@ -30,12 +30,15 @@ namespace WPD
 	matrix3x3cd calculate_Y_matrix(double Z0, double er, double d2, const std::vector<double>& Cn2,
 		double d3, const std::vector<double>& Cn3, int M, double R, double f, int K = 50);
 	matrix3x3cd calculate_Y_matrix(const WPD& wpd, double f, int K = 50);
+	matrix3x3cd calculate_system_Y_matrix(const WPD& wpd, const NTL::NTL& out2,
+		const NTL::NTL& out3, double f, int K = 50);
 
 	matrix3x3cd calculate_S_matrix(double Z0, double er, double d2, const std::vector<double>& Cn2,
 		double d3, const std::vector<double>& Cn3, int M, double R, double f, std::array<std::complex<double>, 3> Zl, int K = 50);
 	matrix3x3cd calculate_S_matrix(const WPD& wpd, double f, std::array<std::complex<double>, 3> Zl, int K = 50);
+	matrix3x3cd calculate_system_S_matrix(const WPD& wpd, std::complex<double> Zref, const NTL::NTL& out2,
+		const NTL::NTL& out3, double f, int K = 50);
 
-	// [Add inside namespace WPD, before the class definition or with other functions]
 
 	std::pair<matrix3x3cd, std::vector<matrix3x3cd>> calculate_S_matrix_with_grad(
 		double Z0, double er, double d2, const std::vector<double>& Cn2,
@@ -62,7 +65,6 @@ namespace WPD
 		{
 			if (ntl2.get_Z0() != ntl3.get_Z0() || ntl2.get_er() != ntl3.get_er())
 				throw(std::logic_error("Attempting to initialise a WPD using two different substrates"));
-
 		}
 
 		WPD(const WPD_DATA& data)
@@ -75,6 +77,8 @@ namespace WPD
 
 		matrix3x3cd Y_matrix(double f, int K = 50) const;
 		matrix3x3cd S_matrix(double f, std::array<std::complex<double>, 3> Zl, int K = 50) const;
+		matrix3x3cd system_S_matrix(std::complex<double> Zref, const NTL::NTL& out2,
+			const NTL::NTL& out3, double f, int K = 50) const;
 
 	private:
 		NTL::NTL m_ntl2, m_ntl3;
@@ -86,8 +90,13 @@ namespace WPD
 	public:
 		//setters and getters
 		void set_R(const double& R) { m_R = R; };
-		void set_arms(const NTL::NTL& ntl2, const NTL::NTL& ntl3) {if (ntl2.get_Z0() != ntl3.get_Z0() || ntl2.get_er() != ntl3.get_er())
-				throw(std::logic_error("Attempting to set a WPD using two different substrates")); m_ntl2 = ntl2; m_ntl3 = ntl3; }
+		void set_Z0(const double& Z0) { m_Z0 = Z0; m_ntl2.set_Z0(Z0); m_ntl3.set_Z0(Z0); }
+		void set_er(const double& er) { m_er = er; m_ntl2.set_er(er); m_ntl3.set_er(er); }
+		void set_M(const double& M) { m_M = M; m_ntl2.set_M(M); m_ntl3.set_M(M); }
+		void set_arms(const NTL::NTL& ntl2, const NTL::NTL& ntl3) {
+			if (ntl2.get_Z0() != ntl3.get_Z0() || ntl2.get_er() != ntl3.get_er())
+				throw(std::logic_error("Attempting to set a WPD using two different substrates")); m_ntl2 = ntl2; m_ntl3 = ntl3;
+		}
 
 		NTL::NTL get_ntl2() const { return m_ntl2; }
 		NTL::NTL get_ntl3() const { return m_ntl3; }
