@@ -110,18 +110,19 @@ namespace NTL
 
 	double calculate_W_H(double z, double er) // z is IMPEDANCE
 	{
-		double e_eff_cross = (er + 1) / 2.0 + (er - 1) / 2.0 * std::pow(1.0 + 12.0 / 2.0, -0.5);
-		double Z_cross = (60.0 / std::sqrt(e_eff_cross)) * std::log(8.0 / 2.0 + 2.0 / 4.0);
+		double A = (z / 60.0) * std::sqrt((er + 1) / 2.0) + ((er - 1) / (er + 1)) * (0.23 + (0.11 / er));
+		double w_h = (8.0 * std::exp(A)) / (std::exp(2.0 * A) - 2.0);
 
-		if (z >= Z_cross)
+		if (w_h < 2.0)
 		{
-			double A = (z / 60) * std::sqrt((er + 1) / 2) + ((er - 1) / (er + 1)) * (0.23 + (0.11 / er));
-			return (8 * std::exp(A)) / (std::exp(2 * A) - 2);
+			return w_h;
 		}
 		else
 		{
-			double B = (377 * M_PI) / (2 * z * std::sqrt(er));
-			return (2 / M_PI) * (B - 1 - std::log(std::abs(2 * B - 1)) + ((er - 1) / (2 * er)) * (std::log(std::abs(B - 1)) + 0.39 - (0.61 / er)));
+			double B = (377.0 * M_PI) / (2.0 * z * std::sqrt(er));
+			w_h = (2.0 / M_PI) * (B - 1.0 - std::log(std::abs(2.0 * B - 1.0))
+				+ ((er - 1) / (2.0 * er)) * (std::log(std::abs(B - 1.0)) + 0.39 - (0.61 / er)));
+			return w_h;
 		}
 	}
 
