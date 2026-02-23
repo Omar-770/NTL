@@ -63,6 +63,13 @@ namespace NTL::fh
 		return T(j);
 	}
 
+	/// Exports
+	// Export geometry to CSV for HFSS/CST
+	void export_geometry_csv(const NTL& ntl, double substrate_height, const std::string& filename, double step = 1e-4);
+
+	// Export geometry to an AutoCAD Script (.scr)
+	void export_geometry_scr(const NTL& ntl, double substrate_height, const std::string& filename, double step = 1e-4);
+	
 	/// Shortcut functions
 	//NTL to file
 	std::fstream ntl_to_file(const NTL& ntl, const std::string& name, const std::string& readme = std::string());

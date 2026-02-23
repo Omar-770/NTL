@@ -2,7 +2,14 @@
 
 #include <vector>
 #include <nlopt.hpp>
+#include <iostream>
+#include <utility>
+#include <string>
 #include <random>
+#include "models/wpd.h"
+#include "models/ntl.h"
+#include "optimisation/WPD_opt.h"
+#include "common/file_handler.h"
 
 
 using complex = std::complex<double>;
@@ -63,4 +70,50 @@ inline std::ostream& operator<<(std::ostream& stream, const std::vector<std::com
     stream << '}';
 
     return stream;
+}
+
+inline std::pair<bool, std::string> save_results(const WPD::opt_setup& setup, const WPD::WPD& wpd, const NTL::NTL& out2, const NTL::NTL& out3)
+{
+    bool saved = false;
+    std::cout << "\n\n\n";
+    std::string save;
+    do
+    {
+        std::cout << "Save results? [Y/N]: ";
+        std::cin >> save;
+    } while (save != "y" && save != "Y" && save != "N" && save != "n");
+    std::string folder;
+
+    if (save == "Y" || save == "y")
+    {
+        do
+        {
+            try
+            {
+                std::cout << "Enter folder name: ";
+                std::cin >> folder;
+                if (folder == "0") break;
+                double H = 4e-3;
+                ::NTL::fh::wpd_to_file(wpd, folder + "/wpd");
+                ::NTL::fh::ntl_to_file(out2, folder + "/out2");
+                ::NTL::fh::ntl_to_file(out3, folder + "/out3");
+                ::NTL::fh::setup_to_file<WPD::opt_setup>(setup, folder + "/setup");
+                ::NTL::fh::export_geometry_scr(out2, H, folder + "/out2");
+                ::NTL::fh::export_geometry_scr(out3, H, folder + "/out3");
+                ::NTL::fh::export_geometry_scr(wpd.get_ntl2(), H, folder + "/ntl2");
+                ::NTL::fh::export_geometry_scr(wpd.get_ntl3(), H, folder + "/ntl3");
+                ::NTL::fh::export_geometry_csv(out2, H, folder + "/out2");
+                ::NTL::fh::export_geometry_csv(out3, H, folder + "/out3");
+                ::NTL::fh::export_geometry_csv(wpd.get_ntl2(), H, folder + "/ntl2");
+                ::NTL::fh::export_geometry_csv(wpd.get_ntl3(), H, folder + "/ntl3");
+                saved = true;
+            }
+            catch (std::exception& e)
+            {
+                std::cerr << "Saving ERROR: " << e.what() << ", check if file exists...\n";
+            }
+        } while (saved != true);
+    }
+
+    return { saved, folder };
 }
