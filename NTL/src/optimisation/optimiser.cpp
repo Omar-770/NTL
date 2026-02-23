@@ -1,5 +1,6 @@
 #include "optimiser.h"
 #include <iostream>
+#include "common/helpers.h"
 
 namespace NTL
 {

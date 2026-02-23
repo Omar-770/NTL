@@ -6,7 +6,6 @@
 #include <nlohmann/json.hpp>
 #include <memory>
 #include "models/ntl.h"
-#include "common/helpers.h"
 
 namespace NTL
 {

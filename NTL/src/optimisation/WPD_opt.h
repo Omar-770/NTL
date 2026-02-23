@@ -14,7 +14,6 @@
 namespace WPD
 {
 	class opt;
-	class opt2;
 	struct opt_setup;
 	struct opt_result;
 
