@@ -86,10 +86,11 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <OpenMPSupport>false</OpenMPSupport>
+      <OpenMPSupport>true</OpenMPSupport>
       <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -97,6 +98,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\common\latex.cpp" />
     <ClCompile Include="src\optimisation\WPD_opt_2.cpp" />
     <ClCompile Include="src\common\file_handler.cpp" />
     <ClCompile Include="main.cpp" />
@@ -109,6 +111,7 @@
     <ClCompile Include="src\optimisation\WPD_opt.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\common\latex.h" />
     <ClInclude Include="src\optimisation\WPD_opt_2.h" />
     <ClInclude Include="src\common\enums.h" />
     <ClInclude Include="src\common\file_handler.h" />
@@ -123,7 +126,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\dir\setup1.json" />
-    <None Include="..\dir\WPD1.json" />
     <None Include="..\dir\wpd_setup1.json" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
