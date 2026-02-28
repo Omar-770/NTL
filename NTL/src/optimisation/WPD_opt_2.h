@@ -18,10 +18,11 @@ namespace WPD
 		opt_result optimise(console mode = console::active);
 
 		void print_result_logs();
+		void print_debug_logs();
 
 	public:
-		void optimise_d_arms() { m_d_arms = true; }
-		void optimise_d_outputs() { m_d_outputs = true; }
+		void optimise_d_arms() { m_opt_d_arms = true; }
+		void optimise_d_outputs() { m_opt_d_outputs = true; }
 
 	private:
 		void optimise_arms();
@@ -33,6 +34,7 @@ namespace WPD
 		double m_Z0;
 		double m_er;
 		double m_d;
+		double m_d_out;
 		double m_Zref;
 		int m_M;
 		std::vector<double> m_freqs;
@@ -48,8 +50,8 @@ namespace WPD
 		bool m_out;
 		int m_F;
 		int m_N1;
-		bool m_d_arms;
-		bool m_d_outputs;
+		bool m_opt_d_arms;
+		bool m_opt_d_outputs;
 
 		std::vector<std::complex<double>> m_arm2_Zl;
 		std::vector<std::complex<double>> m_arm2_Zs;

@@ -7,6 +7,7 @@ namespace WPD
         m_Z0 = setup.Z0;
         m_er = setup.er;
         m_d = setup.d;
+        m_d_out = setup.d_out;
         m_M = setup.M;
         m_Zref = setup.Zref;
         m_freqs = setup.freqs;
@@ -64,8 +65,8 @@ namespace WPD
         resize_vec(m_arm3_Zl);
         resize_vec(m_arm3_Zs);
 
-        m_d_arms = false;
-        m_d_outputs = false;
+        m_opt_d_arms = false;
+        m_opt_d_outputs = false;
 
         int hw_threads = std::thread::hardware_concurrency();
         if (hw_threads == 0) hw_threads = 4; 
@@ -131,13 +132,80 @@ namespace WPD
         std::cout << "R: = " << m_R << '\n';
     }
 
+    void opt_2::print_debug_logs()
+    {
+        std::cout << "\n========================================\n";
+        std::cout << "       WPD_OPT_2 DEBUG LOGS             \n";
+        std::cout << "========================================\n";
+
+        std::cout << "-- Physical Constants --\n";
+        std::cout << "Z0: " << m_Z0 << " Ohm\n";
+        std::cout << "Epsilon_r: " << m_er << "\n";
+        std::cout << "Fourier Sine Terms (M): " << m_M << "\n";
+        std::cout << "Integration Steps (K): " << m_K << "\n";
+
+        std::cout << "\n-- Current Global Variables --\n";
+        std::cout << "Arm Length (m_d): " << m_d << " m (" << m_d * 1000.0 << " mm)\n";
+        std::cout << "Isolation Resistor (m_R): " << m_R << " Ohm\n";
+        std::cout << "Reference Z (m_Zref): " << m_Zref << " Ohm\n";
+
+        std::cout << "\n-- Optimization Constraints --\n";
+        std::cout << "Z_min: " << m_Z_min << " Ohm\n";
+        std::cout << "Z_max: " << m_Z_max << " Ohm\n";
+        std::cout << "R_min: " << m_R_min << " Ohm\n";
+        std::cout << "R_max: " << m_R_max << " Ohm\n";
+        std::cout << "Current Coeffs Count (m_N): " << m_N << "\n";
+        std::cout << "Coeffs per Arm (m_N1): " << m_N1 << "\n";
+
+        std::cout << "\n-- Configured Frequencies & Splits --\n";
+        std::cout << "Count (m_F): " << m_F << "\n";
+        for (size_t i = 0; i < m_freqs.size(); ++i)
+        {
+            std::cout << "  Freq " << i << ": " << m_freqs[i] / 1e9
+                << " GHz \t| Split: " << m_split[i] << "\n";
+        }
+
+        std::cout << "\n-- Calculated Target Impedances (Per Frequency) --\n";
+        std::cout << "These are the impedances the arms must match:\n";
+        for (size_t i = 0; i < m_F; ++i)
+        {
+            std::cout << "  [" << m_freqs[i] / 1e9 << " GHz] "
+                << "Arm2_Zs: " << m_arm2_Zs[i] << " | "
+                << "Arm2_Zl: " << m_arm2_Zl[i] << "\n";
+            std::cout << "             "
+                << "Arm3_Zs: " << m_arm3_Zs[i] << " | "
+                << "Arm3_Zl: " << m_arm3_Zl[i] << "\n";
+        }
+
+        std::cout << "\n-- Internal NTL Component States --\n";
+
+        auto print_ntl = [](const char* name, NTL::NTL& n) {
+            std::cout << "[" << name << "]\n";
+            std::cout << "  Length: " << n.get_d() * 1000.0 << " mm\n";
+            std::cout << "  Coeffs (Cn): " << n.get_Cn() << "\n"; // Relies on your existing vector overload
+            std::cout << "  Start Z(0): " << n.Z(0.0) << " Ohm\n";
+            std::cout << "  End Z(d):   " << n.Z(n.get_d()) << " Ohm\n";
+            };
+
+        print_ntl("NTL 0 (Upper Arm)", m_ntl[0]);
+        print_ntl("NTL 1 (Lower Arm)", m_ntl[1]);
+        print_ntl("NTL 2 (Output Transformer 2)", m_ntl[2]);
+        print_ntl("NTL 3 (Output Transformer 3)", m_ntl[3]);
+
+        std::cout << "\n-- Flags --\n";
+        std::cout << "Optimize Arm Length (m_d_arms): " << (m_opt_d_arms ? "TRUE" : "FALSE") << "\n";
+        std::cout << "Optimize Output Length (m_d_outputs): " << (m_opt_d_outputs ? "TRUE" : "FALSE") << "\n";
+
+        std::cout << "========================================\n\n";
+    }
+
     void opt_2::optimise_arms()
     {
         m_N *= 2;
         m_lb.assign(m_N, -1);
         m_ub.assign(m_N, 1);
-        m_toll_z.assign(m_K, 1e-6);
-        m_toll_bounds.assign(4, 1e-6);
+        m_toll_z.assign(2 * m_K, 1e-6);
+        m_toll_bounds.assign(2, 1e-6);
 
         for (int i = 0; i < m_F; i++)
         {
@@ -149,7 +217,7 @@ namespace WPD
 
         std::vector<double> Cn;
 
-        if (m_d_arms)
+        if (m_opt_d_arms)
         {
             double init_d = m_d;
             int init_max_attempts = m_max_attempts;
@@ -188,6 +256,7 @@ namespace WPD
             m_ntl[1].set_d(m_d);
             m_d = init_d;
             m_max_attempts = init_max_attempts;
+            Cn = new_result.optimised_cn;
         }
         else
         {
@@ -197,10 +266,10 @@ namespace WPD
         m_ntl[0].set_Cn(std::vector<double>(Cn.begin(), Cn.begin() + m_N1));
         m_ntl[1].set_Cn(std::vector<double>(Cn.begin() + m_N1, Cn.begin() + 2 * m_N1));
 
-        if (m_out && m_d_arms)
+        if (m_out && m_opt_d_arms)
             std::cout << "Final NTL length:\t" << m_ntl[0].get_d() * 1000 << "mm" << std::endl;
 
-
+        m_N /= 2;
     }
 
     void opt_2::optimise_transformers()
@@ -218,7 +287,7 @@ namespace WPD
         setup.max_attempts = m_max_attempts;
         setup.Z0 = m_Z0;
         setup.er = m_er;
-        setup.d = m_d;
+        setup.d = m_d_out;
         setup.M = m_M;
         setup.freqs = m_freqs;
         setup.K = m_K;
@@ -239,7 +308,7 @@ namespace WPD
 
 
         NTL::opt opt2(setup);
-        if (m_d_outputs)
+        if (m_opt_d_outputs)
             m_ntl[2] = opt2.optimise_d(m_out ? console::active : console::inactive).ntl;
         else
             m_ntl[2] = opt2.optimise(m_out ? console::active : console::inactive).ntl;
@@ -252,7 +321,7 @@ namespace WPD
 
 
         NTL::opt opt3(setup);
-        if (m_d_outputs)
+        if (m_opt_d_outputs)
             m_ntl[3] = opt3.optimise_d(m_out ? console::active : console::inactive).ntl;
         else
             m_ntl[3] = opt3.optimise(m_out ? console::active : console::inactive).ntl;
@@ -267,9 +336,6 @@ namespace WPD
         if (original_out)
             std::cout << "Calculating optimal isolation resistance (Hybrid Sweep + Golden Section)...\n";
 
-        // ---------------------------------------------------------
-        // 1. Pre-calculate the Series Impedance for all frequencies
-        // ---------------------------------------------------------
         std::vector<std::complex<double>> Z_series_vec;
         Z_series_vec.reserve(m_F);
 
@@ -277,37 +343,28 @@ namespace WPD
         {
             double f = m_freqs[i];
 
-            // Impedance looking into the Transformers (Load = Zref)
             std::complex<double> Z_trans2 = m_ntl[2].Zin(m_Zref, f, m_K);
             std::complex<double> Z_trans3 = m_ntl[3].Zin(m_Zref, f, m_K);
 
-            // Impedance looking back into the Arms (Source = Short/Ground for Odd Mode)
             std::complex<double> Z_arm2_back = m_ntl[0].Zout(0.0, f, m_K);
             std::complex<double> Z_arm3_back = m_ntl[1].Zout(0.0, f, m_K);
 
-            // Parallel combination at each node (Transformer || Arm)
             std::complex<double> Y_node1 = (1.0 / Z_trans2) + (1.0 / Z_arm2_back);
             std::complex<double> Y_node2 = (1.0 / Z_trans3) + (1.0 / Z_arm3_back);
 
-            // Total Series Impedance seen by the resistor (Node1 + Node2)
             std::complex<double> Z_series = (1.0 / Y_node1) + (1.0 / Y_node2);
             Z_series_vec.push_back(Z_series);
         }
 
-        // Cost function: Sum of squared reflection coefficients across the band
         auto calculate_cost = [&](double R) -> double {
             double cost = 0.0;
             for (const auto& Z : Z_series_vec)
             {
-                // |Gamma|^2 = |(Z - R)/(Z + R)|^2
                 cost += std::norm((Z - R) / (Z + R));
             }
             return cost;
             };
 
-        // ---------------------------------------------------------
-        // 2. Coarse Sweep (Find Global Minimum Region)
-        // ---------------------------------------------------------
         double best_R_guess = m_R_min;
         double min_cost = std::numeric_limits<double>::max();
         int sweep_points = 100;
@@ -324,10 +381,6 @@ namespace WPD
             }
         }
 
-        // ---------------------------------------------------------
-        // 3. Golden Section Search (Refine for Precision)
-        // ---------------------------------------------------------
-        // Bracket the search around the best guess
         double bracket_width = step * 2.0;
         double a = std::max(m_R_min, best_R_guess - bracket_width);
         double b = std::min(m_R_max, best_R_guess + bracket_width);
@@ -336,7 +389,7 @@ namespace WPD
         double c = b - (b - a) / gr;
         double d = a + (b - a) / gr;
 
-        while (std::abs(b - a) > 1e-4) // Precision tolerance
+        while (std::abs(b - a) > 1e-4) 
         {
             if (calculate_cost(c) < calculate_cost(d)) {
                 b = d;
@@ -352,7 +405,6 @@ namespace WPD
 
         m_R = (a + b) / 2.0;
 
-        // Restore state
         m_out = original_out;
         if (m_out)
             std::cout << "  >> Final Optimal R: " << m_R << " Ohms\n";
@@ -364,10 +416,10 @@ namespace WPD
         std::vector<double> Cn2(Cn.begin(), Cn.begin() + m_N1);
         std::vector<double> Cn3(Cn.begin() + m_N1, Cn.begin() + 2 * m_N1);
 
-#pragma omp parallel        
+        #pragma omp parallel        
         {
             double thread_sum_squares{};
-#pragma omp for nowait
+            #pragma omp for nowait
             for (int i = 0; i < m_F; i++)
             {
                 double f = m_freqs[i];
@@ -394,7 +446,7 @@ namespace WPD
                 thread_sum_squares += std::pow(H2.imag() - H3.imag(), 2);
             }
 
-#pragma omp critical
+            #pragma omp critical
             {
                 sum_squares += thread_sum_squares;
             }
@@ -409,42 +461,55 @@ namespace WPD
         const double* Cn2 = Cn;
         const double* Cn3 = Cn + m_N1;
 
-        res[0] = NTL::calculate_Z(Cn2, m_N1, m_M, m_Z0, m_d, 0.0) - m_Zref;
-        res[1] = NTL::calculate_Z(Cn2, m_N1, m_M, m_Z0, m_d, m_d) - m_Zref;
-        res[2] = NTL::calculate_Z(Cn3, m_N1, m_M, m_Z0, m_d, 0.0) - m_Zref;
-        res[3] = NTL::calculate_Z(Cn3, m_N1, m_M, m_Z0, m_d, m_d) - m_Zref;
+        //res[0] = NTL::calculate_Z(Cn2, m_N1, m_M, m_Z0, m_d, 0.0) - m_Zref;
+        //res[1] = NTL::calculate_Z(Cn2, m_N1, m_M, m_Z0, m_d, m_d) - m_Zref;
+        //res[2] = NTL::calculate_Z(Cn3, m_N1, m_M, m_Z0, m_d, 0.0) - m_Zref;
+        //res[3] = NTL::calculate_Z(Cn3, m_N1, m_M, m_Z0, m_d, m_d) - m_Zref;
+
+        res[0] = NTL::calculate_Z(Cn2, m_N1, m_M, m_Z0, m_d, m_d) - m_Zref;
+        res[1] = NTL::calculate_Z(Cn3, m_N1, m_M, m_Z0, m_d, m_d) - m_Zref;
+
     }
 
     void opt_2::inequality_constraints_Zmax(unsigned m, double* res, unsigned n, const double* Cn) const
     {
-        //All K subsections impedances < Z_max
         const double* Cn2 = Cn;
         const double* Cn3 = Cn + m_N1;
 
-        int half_K = m_K / 2;
-        double dz = m_d / m_K;
+        unsigned k_points = m / 2;
 
-        for (int i = 0; i < half_K; i++)
-            res[i] = NTL::calculate_Z(Cn2, m_N1, m_M, m_Z0, m_d, (double(i) + 0.5) * dz) - m_Z_max;
+        double dz = m_d / k_points;
 
-        for (int i = 0; i < half_K; i++)
-            res[half_K + i] = NTL::calculate_Z(Cn3, m_N1, m_M, m_Z0, m_d, (double(i) + 0.5) * dz) - m_Z_max;
+        for (unsigned i = 0; i < k_points; ++i)
+        {
+            double z = (i + 0.5) * dz;
+
+            double Z_val2 = NTL::calculate_Z(Cn2, m_N1, m_M, m_Z0, m_d, z);
+            res[i] = Z_val2 - m_Z_max;
+
+            double Z_val3 = NTL::calculate_Z(Cn3, m_N1, m_M, m_Z0, m_d, z);
+            res[k_points + i] = Z_val3 - m_Z_max;
+        }
     }
 
     void opt_2::inequality_constraints_Zmin(unsigned m, double* res, unsigned n, const double* Cn) const
     {
-        //All K subsections impedances > Z_min
         const double* Cn2 = Cn;
         const double* Cn3 = Cn + m_N1;
 
-        int half_K = m_K / 2;
-        double dz = m_d / m_K;
+        unsigned k_points = m / 2;
+        double dz = m_d / k_points;
 
-        for (int i = 0; i < half_K; i++)
-            res[i] = m_Z_min - NTL::calculate_Z(Cn2, m_N1, m_M, m_Z0, m_d, (double(i) + 0.5) * dz);
+        for (unsigned i = 0; i < k_points; ++i)
+        {
+            double z = (i + 0.5) * dz;
 
-        for (int i = 0; i < half_K; i++)
-            res[half_K + i] = m_Z_min - NTL::calculate_Z(Cn3, m_N1, m_M, m_Z0, m_d, (double(i) + 0.5) * dz);
+            double Z_val2 = NTL::calculate_Z(Cn2, m_N1, m_M, m_Z0, m_d, z);
+            res[i] = m_Z_min - Z_val2;
+
+            double Z_val3 = NTL::calculate_Z(Cn3, m_N1, m_M, m_Z0, m_d, z);
+            res[k_points + i] = m_Z_min - Z_val3;
+        }
     }
 
     double opt_2::objective_with_fd_gradient(const std::vector<double>& Cn, std::vector<double>& grad, void* data) const

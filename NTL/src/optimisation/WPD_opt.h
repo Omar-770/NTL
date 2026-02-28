@@ -31,6 +31,7 @@ namespace WPD
 		double Z0{0};
 		double er{0};
 		double d{ 0 };
+		double d_out{ 0 };
 		int M{ 0 };
 		double Zref{ 0 }; 
 		std::vector<double> freqs{};

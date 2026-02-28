@@ -7,6 +7,7 @@ namespace WPD
         Z0 = setup.Z0;
         er = setup.er;
         d = setup.d;
+        d_out = setup.d_out;
         M = setup.M;
         Zref = setup.Zref;
         freqs = setup.freqs;
@@ -32,6 +33,7 @@ namespace WPD
         Z0 = j.at("Z0").get<double>();
         er = j.at("er").get<double>();
         d = j.at("d").get<double>();
+        d_out = j.at("d_out").get<double>();
         M = j.at("M").get<int>();
         Zref = j.at("Zref").get<double>();      
 
@@ -67,6 +69,7 @@ namespace WPD
             { "Z0", Z0 },
             { "er", er },
             { "d", d },
+            { "d_out", d_out },
             { "M", M },
             { "Zref", Zref },            
             { "freqs", freqs },
