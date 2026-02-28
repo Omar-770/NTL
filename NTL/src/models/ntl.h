@@ -105,8 +105,8 @@ namespace NTL
 		double er_eff(const double& z) const;
 
 		//data extraction
-		std::vector<std::pair<double, double>> get_Z_vec(double step_size = 0.1) const;
-		std::vector<std::pair<double, double>> get_w_h_vec(double step_size = 0.1) const;
+		std::vector<std::pair<double, double>> get_Z_vec(double step_size = 1e-4) const;
+		std::vector<std::pair<double, double>> get_w_h_vec(double step_size = 1e-4) const;
 
 		DATA data() const;
 

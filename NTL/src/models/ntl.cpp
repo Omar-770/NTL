@@ -35,7 +35,7 @@ namespace NTL
 
 		int j = n - m - 1;
 		for (size_t i = 1; i < m + 1; ++i) {
-			Z += Cn[j + i] * std::cos(temp * i);
+			Z += Cn[j + i] * std::sin(temp * i);
 		}
 		return Z0 * std::exp(Z);
 	}
