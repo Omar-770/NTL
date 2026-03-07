@@ -69,6 +69,8 @@ namespace NTL::fh
 
 	// Export geometry to an AutoCAD Script (.scr)
 	void export_geometry_scr(const NTL& ntl, double substrate_height, const std::string& filename, double step = 1e-4);
+
+	void bend_geometry_scr(const NTL& ntl, double substrate_height, const std::string& filename, double angle, double step = 1e-4);
 	
 	/// Shortcut functions
 	//NTL to file
