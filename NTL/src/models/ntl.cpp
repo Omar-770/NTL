@@ -461,22 +461,40 @@ namespace NTL
 
 	std::vector<std::pair<double, double>> NTL::get_Z_vec(double step_size) const
 	{
-		std::vector<std::pair<double, double>> Z_vec;
-		Z_vec.reserve(m_d / step_size + 1);
-		for (double z = 0; z <= m_d; z += step_size)
+		int num_steps = std::round(m_d / step_size);
+
+		std::vector<std::pair<double, double>> z_vec;
+		z_vec.reserve(num_steps + 1);
+
+		for (int i = 0; i <= num_steps; ++i)
 		{
-			Z_vec.emplace_back(z, Z(z));
+			double z = i * step_size;
+			if (z > m_d)
+			{
+				z = m_d;
+			}
+
+			z_vec.emplace_back(z, Z(z));
 		}
-		return Z_vec;
+
+		return z_vec;
 	}
 
 	std::vector<std::pair<double, double>> NTL::get_w_h_vec(double step_size) const
 	{
-		std::vector<std::pair<double, double>> w_h_vec;
-		w_h_vec.reserve(m_d / step_size + 1);
+		int num_steps = std::round(m_d / step_size);
 
-		for (double z = 0; z <= m_d; z += step_size)
+		std::vector<std::pair<double, double>> w_h_vec;
+		w_h_vec.reserve(num_steps + 1);
+
+		for (int i = 0; i <= num_steps; ++i)
 		{
+			double z = i * step_size;
+			if (z > m_d) 
+			{
+				z = m_d;
+			}
+
 			w_h_vec.emplace_back(z, W_H(z));
 		}
 
