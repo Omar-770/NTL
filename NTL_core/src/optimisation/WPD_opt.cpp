@@ -1,8 +1,95 @@
-#include "optimisation/WPD_opt_2.h"
+#include "WPD_opt.h"
+#include "common/helpers.h"
 
 namespace WPD
 {
-    opt_2::opt_2(const opt_setup& setup) : optimiser(setup)
+    opt_setup::opt_setup(const opt_setup& setup) : optimiser_setup(setup)
+    {
+        Z0 = setup.Z0;
+        er = setup.er;
+        d = setup.d;
+        d_out = setup.d_out;
+        M = setup.M;
+        Zref = setup.Zref;
+        freqs = setup.freqs;
+        K = setup.K;
+        Z_min = setup.Z_min;
+        Z_max = setup.Z_max;
+        Z_at_0_2 = setup.Z_at_0_2;
+        Z_at_d_2 = setup.Z_at_d_2;
+        Z_at_0_3 = setup.Z_at_0_3;
+        Z_at_d_3 = setup.Z_at_d_3;
+        R_min = setup.R_min;
+        R_max = setup.R_max;
+        matching_dB = setup.matching_dB;
+        isolation_dB = setup.isolation_dB;
+        split = setup.split;
+    }
+
+    opt_setup::opt_setup(const nlohmann::json& j) : optimiser_setup(j)
+    {
+        if (j.at("setup_type") != "WPD_opt")
+            throw(std::logic_error("Attempted to read a setup from a different json object"));
+
+        Z0 = j.at("Z0").get<double>();
+        er = j.at("er").get<double>();
+        d = j.at("d").get<double>();
+        d_out = j.at("d_out").get<double>();
+        M = j.at("M").get<int>();
+        Zref = j.at("Zref").get<double>();      
+
+        freqs = j.at("freqs").get<std::vector<double>>();
+        K = j.at("K").get<double>();
+        Z_min = j.at("Z_min").get<double>();
+        Z_max = j.at("Z_max").get<double>();
+        Z_at_0_2 = j.at("Z_at_0_2").get<double>();
+        Z_at_d_2 = j.at("Z_at_d_2").get<double>();
+        Z_at_0_3 = j.at("Z_at_0_3").get<double>();
+        Z_at_d_3 = j.at("Z_at_d_3").get<double>();
+        R_min = j.at("R_min").get<double>();
+        R_max = j.at("R_max").get<double>();
+        matching_dB = j.at("matching_dB").get<double>();
+        isolation_dB = j.at("isolation_dB").get<double>();
+        split = j.at("split").get<std::vector<double>>();
+    }
+
+    nlohmann::json opt_setup::get_json() const
+    {      
+        return {
+            { "json_type", "setup" },
+            { "setup_type", "WPD_opt"},
+            { "N", N },
+            { "lb", lb },
+            { "ub", ub },
+            { "toll_bounds", toll_bounds },
+            { "toll_z", toll_z },
+            { "GBL_MAX", GBL_MAX },
+            { "LCL_MAX", LCL_MAX },
+            { "accepted_error", accepted_error },
+            { "max_attempts", max_attempts },
+            { "Z0", Z0 },
+            { "er", er },
+            { "d", d },
+            { "d_out", d_out },
+            { "M", M },
+            { "Zref", Zref },            
+            { "freqs", freqs },
+            { "K", K },
+            { "Z_min", Z_min },
+            { "Z_max", Z_max },
+            { "Z_at_0_2", Z_at_0_2 },
+            { "Z_at_d_2", Z_at_d_2 },
+            { "Z_at_0_3", Z_at_0_3 },
+            { "Z_at_d_3", Z_at_d_3 },
+            { "R_min", R_min },
+            { "R_max", R_max },
+            {"matching_dB", matching_dB},
+            {"isolation_dB", isolation_dB},
+            {"split", split},
+        };
+    }
+
+    opt::opt(const opt_setup& setup) : optimiser(setup)
     {
         m_Z0 = setup.Z0;
         m_er = setup.er;
@@ -69,12 +156,12 @@ namespace WPD
         m_opt_d_outputs = false;
 
         int hw_threads = std::thread::hardware_concurrency();
-        if (hw_threads == 0) hw_threads = 4; 
+        if (hw_threads == 0) hw_threads = 4;
 
         omp_set_num_threads(std::min<int>(m_F, hw_threads));
     }
 
-    opt_result opt_2::optimise(console mode)
+    opt_result opt::optimise(console mode)
     {
         m_out = mode == console::active ? true : false;
         m_use_local_grad_free = true;
@@ -100,7 +187,7 @@ namespace WPD
         return opt_result{ {}, m_wpd, m_ntl[2], m_ntl[3] };
     }
 
-    void opt_2::print_result_logs()
+    void opt::print_result_logs()
     {
 
         for (int i = 0; i < m_F; i++)
@@ -132,7 +219,7 @@ namespace WPD
         std::cout << "R: = " << m_R << '\n';
     }
 
-    void opt_2::print_debug_logs()
+    void opt::print_debug_logs()
     {
         std::cout << "\n========================================\n";
         std::cout << "       WPD_OPT_2 DEBUG LOGS             \n";
@@ -199,7 +286,7 @@ namespace WPD
         std::cout << "========================================\n\n";
     }
 
-    void opt_2::optimise_arms()
+    void opt::optimise_arms()
     {
         m_N *= 2;
         m_lb.assign(m_N, -1);
@@ -272,7 +359,7 @@ namespace WPD
         m_N /= 2;
     }
 
-    void opt_2::optimise_transformers()
+    void opt::optimise_transformers()
     {
         //creates two NTL::opt objects to make the transformers
         NTL::opt_setup setup;
@@ -327,7 +414,7 @@ namespace WPD
             m_ntl[3] = opt3.optimise(m_out ? console::active : console::inactive).ntl;
     }
 
-    void opt_2::optimise_R()
+    void opt::optimise_R()
     {
         // Save state
         bool original_out = m_out;
@@ -389,7 +476,7 @@ namespace WPD
         double c = b - (b - a) / gr;
         double d = a + (b - a) / gr;
 
-        while (std::abs(b - a) > 1e-4) 
+        while (std::abs(b - a) > 1e-4)
         {
             if (calculate_cost(c) < calculate_cost(d)) {
                 b = d;
@@ -410,16 +497,16 @@ namespace WPD
             std::cout << "  >> Final Optimal R: " << m_R << " Ohms\n";
     }
 
-    double opt_2::min_objective(const std::vector<double>& Cn) const
+    double opt::min_objective(const std::vector<double>& Cn) const
     {
         double sum_squares{};
         std::vector<double> Cn2(Cn.begin(), Cn.begin() + m_N1);
         std::vector<double> Cn3(Cn.begin() + m_N1, Cn.begin() + 2 * m_N1);
 
-        #pragma omp parallel        
+#pragma omp parallel        
         {
             double thread_sum_squares{};
-            #pragma omp for nowait
+#pragma omp for nowait
             for (int i = 0; i < m_F; i++)
             {
                 double f = m_freqs[i];
@@ -446,7 +533,7 @@ namespace WPD
                 thread_sum_squares += std::pow(H2.imag() - H3.imag(), 2);
             }
 
-            #pragma omp critical
+#pragma omp critical
             {
                 sum_squares += thread_sum_squares;
             }
@@ -455,7 +542,7 @@ namespace WPD
         return sum_squares;
     }
 
-    void opt_2::equality_constraints(unsigned m, double* res, unsigned n, const double* Cn) const
+    void opt::equality_constraints(unsigned m, double* res, unsigned n, const double* Cn) const
     {
         //terminal impedances = Zref
         const double* Cn2 = Cn;
@@ -471,7 +558,7 @@ namespace WPD
 
     }
 
-    void opt_2::inequality_constraints_Zmax(unsigned m, double* res, unsigned n, const double* Cn) const
+    void opt::inequality_constraints_Zmax(unsigned m, double* res, unsigned n, const double* Cn) const
     {
         const double* Cn2 = Cn;
         const double* Cn3 = Cn + m_N1;
@@ -492,7 +579,7 @@ namespace WPD
         }
     }
 
-    void opt_2::inequality_constraints_Zmin(unsigned m, double* res, unsigned n, const double* Cn) const
+    void opt::inequality_constraints_Zmin(unsigned m, double* res, unsigned n, const double* Cn) const
     {
         const double* Cn2 = Cn;
         const double* Cn3 = Cn + m_N1;
@@ -512,7 +599,7 @@ namespace WPD
         }
     }
 
-    double opt_2::objective_with_fd_gradient(const std::vector<double>& Cn, std::vector<double>& grad, void* data) const
+    double opt::objective_with_fd_gradient(const std::vector<double>& Cn, std::vector<double>& grad, void* data) const
     {
         //No need m_use_local_grad_free is true
         return 0.0;

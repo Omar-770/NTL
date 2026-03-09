@@ -5,7 +5,6 @@
 #include <fstream>
 #include "models/ntl.h"
 #include "models/wpd.h"
-#include "simulation/NTL_sim.h"
 #include "optimisation/NTL_opt.h"
 
 namespace nlohmann {

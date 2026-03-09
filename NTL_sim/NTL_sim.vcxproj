@@ -13,12 +13,11 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{c780dc74-4122-40e6-9db7-df4e4d88f224}</ProjectGuid>
-    <RootNamespace>NTLspace</RootNamespace>
+    <ProjectGuid>{c0bfee49-974c-4d43-aab8-f143852891ef}</ProjectGuid>
+    <RootNamespace>NTLsim</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <Keyword>QtVS_v304</Keyword>
     <QtMsBuild Condition="'$(QtMsBuild)'=='' OR !Exists('$(QtMsBuild)\qt.targets')">$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild>
-    <ProjectName>NTL</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -52,23 +51,18 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(QtMsBuild)\Qt.props" />
-    <Import Project="..\..\MyProps\qt_plot.props" />
+    <Import Project="..\..\my_props\qt_plot.props" />
+    <Import Project="..\..\my_props\dir_props.props" />
+    <Import Project="..\..\my_props\optimisation_release.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(QtMsBuild)\Qt.props" />
-    <Import Project="..\..\MyProps\qt_plot.props" />
-    <Import Project="PropertySheet.props" />
+    <Import Project="..\..\my_props\qt_plot.props" />
+    <Import Project="..\..\my_props\dir_props.props" />
+    <Import Project="..\..\my_props\optimisation_release.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\$(ProjectName)\$(Configuration)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\$(ProjectName)\$(Configuration)\</IntDir>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -77,13 +71,15 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <OpenMPSupport>false</OpenMPSupport>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\dev\NTL\NTL_core\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>C:\dev\NTL\bin\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -95,46 +91,23 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <FloatingPointModel>Fast</FloatingPointModel>
+      <AdditionalIncludeDirectories>C:\dev\NTL\NTL_core\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>C:\dev\NTL\bin\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\common\latex.cpp" />
-    <ClCompile Include="src\optimisation\WPD_opt_2.cpp" />
-    <ClCompile Include="src\common\file_handler.cpp" />
     <ClCompile Include="src\simulation\NTL_sim.cpp" />
-    <ClCompile Include="src\optimisation\NTL_opt.cpp" />
-    <ClCompile Include="src\optimisation\optimiser.cpp" />
-    <ClCompile Include="src\models\ntl.cpp" />
-    <ClCompile Include="src\models\wpd.cpp" />
     <ClCompile Include="src\simulation\WPD_sim.cpp" />
-    <ClCompile Include="src\optimisation\WPD_opt.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\common\latex.h" />
-    <ClInclude Include="src\optimisation\WPD_opt_2.h" />
-    <ClInclude Include="src\common\enums.h" />
-    <ClInclude Include="src\common\file_handler.h" />
     <ClInclude Include="src\simulation\NTL_sim.h" />
-    <ClInclude Include="src\optimisation\NTL_opt.h" />
-    <ClInclude Include="src\common\helpers.h" />
-    <ClInclude Include="src\optimisation\optimiser.h" />
-    <ClInclude Include="src\models\ntl.h" />
-    <ClInclude Include="src\models\wpd.h" />
     <ClInclude Include="src\simulation\WPD_sim.h" />
-    <ClInclude Include="src\optimisation\WPD_opt.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\dir\setup1.json" />
-    <None Include="..\dir\wpd_setup1.json" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(QtMsBuild)\qt.targets" Condition="Exists('$(QtMsBuild)\qt.targets')" />

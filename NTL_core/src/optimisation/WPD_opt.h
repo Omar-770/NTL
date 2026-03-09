@@ -28,12 +28,12 @@ namespace WPD
 		opt_setup(const opt_setup& setup);
 		opt_setup(const nlohmann::json& j);
 
-		double Z0{0};
-		double er{0};
+		double Z0{ 0 };
+		double er{ 0 };
 		double d{ 0 };
 		double d_out{ 0 };
 		int M{ 0 };
-		double Zref{ 0 }; 
+		double Zref{ 0 };
 		std::vector<double> freqs{};
 		int K{ 0 };
 		double Z_min{ 0 };
@@ -45,9 +45,9 @@ namespace WPD
 		double R_min{ 0 };
 		double R_max{ 0 };
 		double matching_dB{ 0 };
-		double isolation_dB{0};
+		double isolation_dB{ 0 };
 		std::vector<double> split{};
-		
+
 		nlohmann::json get_json() const override;
 	};
 
@@ -62,50 +62,63 @@ namespace WPD
 	{
 	public:
 		opt(const opt_setup& setup);
-		opt(const opt_setup& setup, const NTL::NTL& output2, const NTL::NTL& output3);
 
-		opt_result optimise(console mode = console::active, bool output_d = false);
-	
-		void print_config() const;
+		opt_result optimise(console mode = console::active);
+
+		void print_result_logs();
+		void print_debug_logs();
+
+	public:
+		void optimise_d_arms() { m_opt_d_arms = true; }
+		void optimise_d_outputs() { m_opt_d_outputs = true; }
 
 	private:
+		void optimise_arms();
+		void optimise_transformers();
+		void optimise_R();
+
+	private:
+		//General parameters
 		double m_Z0;
 		double m_er;
 		double m_d;
+		double m_d_out;
+		double m_Zref;
 		int m_M;
-		double m_Zref; //port1 impedance and load impedance for output transformers
-		NTL::NTL m_ntl2_out; //port2 output transformer
-		NTL::NTL m_ntl3_out; //port3 output transformer
 		std::vector<double> m_freqs;
 		int m_K;
 		double m_Z_min;
 		double m_Z_max;
-		double m_Z_at_0_2;
-		double m_Z_at_d_2
-			;
-		double m_Z_at_0_3;
-		double m_Z_at_d_3;
 		double m_R_min;
 		double m_R_max;
-		double m_matching_dB;
-		double m_isolation_dB;
-		std::vector<double> m_split; //P3/P2
-
-		
-	private:
-		std::vector<std::array<std::complex<double>, 3>> m_Zl;
-		int m_N2;
-		int m_N3;
-		double m_matching_abs;
-		double m_isolation_abs;
-		std::vector <std::array<double, 2>> m_split_abs;
+		std::vector<double> m_split;
 
 	private:
-		//nlopt functions
+		//Internal common variables
+		bool m_out;
+		int m_F;
+		int m_N1;
+		bool m_opt_d_arms;
+		bool m_opt_d_outputs;
+
+		std::vector<std::complex<double>> m_arm2_Zl;
+		std::vector<std::complex<double>> m_arm2_Zs;
+		std::vector<std::complex<double>> m_arm3_Zl;
+		std::vector<std::complex<double>> m_arm3_Zs;
+
+	private:
+		//Final Result
+		WPD m_wpd;
+		std::array<NTL::NTL, 4> m_ntl;
+		double m_R;
+
+	private:
+		// nlopt functions
 		double min_objective(const std::vector<double>& Cn) const override;
 		void equality_constraints(unsigned m, double* res, unsigned n, const double* Cn) const override;
 		void inequality_constraints_Zmax(unsigned m, double* res, unsigned n, const double* Cn) const override;
 		void inequality_constraints_Zmin(unsigned m, double* res, unsigned n, const double* Cn) const override;
 		double objective_with_fd_gradient(const std::vector<double>& Cn, std::vector<double>& grad, void* data) const override;
 	};
+
 }
