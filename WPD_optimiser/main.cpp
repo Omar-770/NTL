@@ -10,7 +10,6 @@
 #include "models/wpd.h"
 #include "optimisation/NTL_opt.h"
 #include "optimisation/WPD_opt.h"
-#include "optimisation/WPD_opt_2.h"
 #include "simulation/NTL_sim.h"
 #include "simulation/WPD_sim.h"
 #include "common/file_handler.h"
@@ -25,10 +24,10 @@ int main(int argc, char* argv[])
 	try
 	{
 		QApplication app(argc, argv);
-		
+
 		//setup and run optimisation
-		auto setup = fh::file_to_setup<WPD::opt_setup>("wpd_setup1");
-		WPD::opt_2 opt(setup);
+		auto setup = fh::file_to_setup<WPD::opt_setup>("wpd_setup");
+		WPD::opt opt(setup);
 		WPD::opt_result result = opt.optimise();
 
 		//build the result
@@ -82,6 +81,8 @@ int main(int argc, char* argv[])
 			fh::wpd_to_file(wpd, folder + "/" + folder + "_wpd");
 			fh::ntl_to_file(out2, folder + "/" + folder + "_out2");
 			fh::ntl_to_file(out3, folder + "/" + folder + "_out3");
+			fh::ntl_to_file(wpd.get_ntl2(), folder + "/" + folder + "_ntl2");
+			fh::ntl_to_file(wpd.get_ntl3(), folder + "/" + folder + "_ntl3");
 			fh::setup_to_file<WPD::opt_setup>(setup, folder + "/" + folder + "_setup");
 			//AutoCAD Script
 			fh::export_geometry_scr(out2, H, folder + "/" + folder + "_out2");
