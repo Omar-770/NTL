@@ -9,6 +9,10 @@
   <Project Path="NTL_sim/NTL_sim.vcxproj" Id="c0bfee49-974c-4d43-aab8-f143852891ef">
     <BuildDependency Project="NTL_core/NTL_core.vcxproj" />
   </Project>
+  <Project Path="NTL_simulator/NTL_simulator.vcxproj" Id="baad30fc-020b-4ee0-bba6-007fce676ec2">
+    <BuildDependency Project="NTL_core/NTL_core.vcxproj" />
+    <BuildDependency Project="NTL_sim/NTL_sim.vcxproj" />
+  </Project>
   <Project Path="WPD_optimiser/WPD_optimiser.vcxproj" Id="6152ee01-ce5e-468d-a749-d4a84598cefa">
     <BuildDependency Project="NTL_core/NTL_core.vcxproj" />
     <BuildDependency Project="NTL_sim/NTL_sim.vcxproj" />
