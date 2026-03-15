@@ -1,28 +1,39 @@
+#pragma once
+
+#include "NTL_bender.h"
 #include <iostream>
+#include <fstream>
 #include "models/ntl.h"
 #include "common/file_handler.h"
-#include "common/helpers.h"
-#include "bender.h"
 
 namespace fh = NTL::fh;
 
-int main()
+inline void NTL_free_style()
 {
-
 	std::string file_name{};
 	double start_pos{};
 	double end_pos{};
 	double angle{};
 	double substrate_height{ 1.6e-3 };
-	double step{ 1e-4 };
+	double step{};
 	int choice{};
 	NTL::NTL ntl;
+
+	std::cout << "Global Step Size (mm): ";
+	std::cin >> step;
+	step /= 1000.0;
+	if (std::cin.fail())
+	{
+		std::cin.clear();
+		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		std::cout << "Invalid input. Please enter numbers only.\n";
+	}
 
 	while (true)
 	{
 		try
 		{
-			std::cout << "File Name: ";
+			std::cout << "\n\nFile Name: ";
 			std::cin >> file_name;
 			ntl = fh::file_to_ntl(file_name);
 		}
@@ -38,9 +49,9 @@ int main()
 			std::cout << "1) Segment\n2) Arc\n3) Back\n\n";
 			std::cout << "=> ";
 			std::cin >> choice;
-			if (std::cin.fail()) 
+			if (std::cin.fail())
 			{
-				std::cin.clear(); 
+				std::cin.clear();
 				std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 				std::cout << "Invalid input. Please enter numbers only.\n";
 				continue;
@@ -140,5 +151,4 @@ int main()
 		}
 	}
 
-	return 0;
 }

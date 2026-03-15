@@ -9,10 +9,7 @@ namespace NTL
 		if (j.at("json_type") != "setup")
 			throw(std::logic_error("Attempted to read a setup from a different json object"));
 
-		N = j.at("N").get<int>(); lb = j.at("lb").get<std::vector<double>>();
-		lb = j.at("lb").get<std::vector<double>>(); ub = j.at("ub").get<std::vector<double>>(); 
-		toll_bounds = j.at("toll_bounds").get<std::vector<double>>();
-		toll_z = j.at("toll_z").get<std::vector<double>>(); 
+		N = j.at("N").get<int>(); 
 		GBL_MAX = j.at("GBL_MAX").get<double>();
 		LCL_MAX = j.at("LCL_MAX").get<double>();
 		accepted_error = j.at("accepted_error").get<double>();
@@ -25,10 +22,6 @@ namespace NTL
 			{ "json_type", "setup" },
 			{ "setup_type", "opt"},
 			{ "N", N },
-			{ "lb", lb },
-			{ "ub", ub },
-			{ "toll_bounds", toll_bounds },
-			{ "toll_z", toll_z },
 			{ "GBL_MAX", GBL_MAX },
 			{ "LCL_MAX", LCL_MAX },
 			{ "accepted_error", accepted_error },
@@ -40,12 +33,14 @@ namespace NTL
 		m_toll_z(setup.toll_z), m_GBL_MAX(setup.GBL_MAX), m_LCL_MAX(setup.LCL_MAX), m_accepted_error(setup.accepted_error),
 		m_max_attempts(setup.max_attempts), m_use_local_grad_free(false)
 	{
-		if (m_N == 0 || m_lb.empty() || m_ub.empty() || m_toll_bounds.empty() || m_toll_z.empty())
-			throw(std::invalid_argument("Incomplete optimisation setup"));
+
 	}
 
 	optimiser_result optimiser::run_optimiser(console mode)
 	{
+		if (m_N == 0 || m_lb.empty() || m_ub.empty() || m_toll_bounds.empty() || m_toll_z.empty())
+			throw(std::invalid_argument("Incomplete optimisation setup"));
+
 		bool output = (mode == console::active) ? true : false;
 
 		double overall_best_error = std::numeric_limits<double>::max();

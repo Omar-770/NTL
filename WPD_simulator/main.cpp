@@ -41,7 +41,44 @@ int main(int argc, char* argv[])
 		double f_max = *std::max_element(setup.freqs.cbegin(), setup.freqs.cend());
 		double f_step = 1e6;
 
-		//simulate 		
+		//simulate 	
+		
+		std::cout << "================================\n";
+		std::cout << "     TRANSMISSION MATRICES\n";
+		std::cout << "================================\n";
+
+		std::cout << "\n\t-> Main Arms\n";
+
+		for (auto& f : setup.freqs)
+		{
+			auto T2 = ntl2.T_matrix(f, 100);
+			auto T3 = ntl3.T_matrix(f, 100);
+
+			std::cout << "\n[Frequency: " << f << "]\n";
+			std::cout << "\nT2:\n";
+			std::cout << T2 << std::endl;
+			std::cout << "\nT3:\n";
+			std::cout << T3 << std::endl;
+		}
+
+		std::cout << "\n\t-> Output Arms\n";
+
+		for (auto& f : setup.freqs)
+		{
+			auto T2 = out2.T_matrix(f, 100);
+			auto T3 = out3.T_matrix(f, 100);
+
+			std::cout << "\n[Frequency: " << f << "]\n";
+			std::cout << "\nT2:\n";
+			std::cout << T2 << std::endl;
+			std::cout << "\nT3:\n";
+			std::cout << T3 << std::endl;
+		}
+
+		std::cout << "\n================================\n";
+		std::cout << "         S-Parameters\n";
+		std::cout << "================================\n\n";
+
 		NTL::sim nsim;
 		WPD::sim wsim(f_min, 1.2 * f_max, f_step, setup.freqs);
 
@@ -57,9 +94,9 @@ int main(int argc, char* argv[])
 		wsim.add_window(nsim.w_h_profile(out3, "Out3"));
 		wsim.add_window(nsim.z_profile(out3, "Out3"));
 
-		wsim.sparams(wpd, setup.Zref, out2, out3);
+		wsim.sparams(wpd, setup.Zref, out2, out3, 100);
 
-		wsim.merge("WPD");
+		wsim.merge("WPD");		
 		
 		app.exec();		
 	}

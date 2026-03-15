@@ -13,8 +13,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{b0903f4f-ea5d-4c5a-bfd6-32e01eb54776}</ProjectGuid>
-    <RootNamespace>NTLbender</RootNamespace>
+    <ProjectGuid>{c5073e75-a274-46ce-a29f-20e6014000f7}</ProjectGuid>
+    <RootNamespace>NTLexporter</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -38,14 +38,14 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\my_props\Link_NTL_core.props" />
     <Import Project="..\..\my_props\dir_props.props" />
+    <Import Project="..\..\my_props\Link_NTL_core.props" />
     <Import Project="..\..\my_props\optimisation_release.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\my_props\Link_NTL_core.props" />
     <Import Project="..\..\my_props\dir_props.props" />
+    <Import Project="..\..\my_props\Link_NTL_core.props" />
     <Import Project="..\..\my_props\optimisation_release.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -79,10 +79,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\bender.cpp" />
+    <ClCompile Include="src\AutoCAD.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\bender.h" />
+    <ClInclude Include="src\AutoCAD.h" />
+    <ClInclude Include="src\export_WPD.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -38,14 +38,8 @@ namespace WPD
 		int K{ 0 };
 		double Z_min{ 0 };
 		double Z_max{ 0 };
-		double Z_at_0_2{ 0 };
-		double Z_at_d_2{ 0 };
-		double Z_at_0_3{ 0 };
-		double Z_at_d_3{ 0 };
 		double R_min{ 0 };
 		double R_max{ 0 };
-		double matching_dB{ 0 };
-		double isolation_dB{ 0 };
 		std::vector<double> split{};
 
 		nlohmann::json get_json() const override;

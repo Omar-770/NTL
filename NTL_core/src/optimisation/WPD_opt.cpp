@@ -14,15 +14,9 @@ namespace WPD
         freqs = setup.freqs;
         K = setup.K;
         Z_min = setup.Z_min;
-        Z_max = setup.Z_max;
-        Z_at_0_2 = setup.Z_at_0_2;
-        Z_at_d_2 = setup.Z_at_d_2;
-        Z_at_0_3 = setup.Z_at_0_3;
-        Z_at_d_3 = setup.Z_at_d_3;
+        Z_max = setup.Z_max;  
         R_min = setup.R_min;
-        R_max = setup.R_max;
-        matching_dB = setup.matching_dB;
-        isolation_dB = setup.isolation_dB;
+        R_max = setup.R_max;      
         split = setup.split;
     }
 
@@ -37,19 +31,12 @@ namespace WPD
         d_out = j.at("d_out").get<double>();
         M = j.at("M").get<int>();
         Zref = j.at("Zref").get<double>();      
-
         freqs = j.at("freqs").get<std::vector<double>>();
         K = j.at("K").get<double>();
         Z_min = j.at("Z_min").get<double>();
-        Z_max = j.at("Z_max").get<double>();
-        Z_at_0_2 = j.at("Z_at_0_2").get<double>();
-        Z_at_d_2 = j.at("Z_at_d_2").get<double>();
-        Z_at_0_3 = j.at("Z_at_0_3").get<double>();
-        Z_at_d_3 = j.at("Z_at_d_3").get<double>();
+        Z_max = j.at("Z_max").get<double>();       
         R_min = j.at("R_min").get<double>();
-        R_max = j.at("R_max").get<double>();
-        matching_dB = j.at("matching_dB").get<double>();
-        isolation_dB = j.at("isolation_dB").get<double>();
+        R_max = j.at("R_max").get<double>();     
         split = j.at("split").get<std::vector<double>>();
     }
 
@@ -58,11 +45,7 @@ namespace WPD
         return {
             { "json_type", "setup" },
             { "setup_type", "WPD_opt"},
-            { "N", N },
-            { "lb", lb },
-            { "ub", ub },
-            { "toll_bounds", toll_bounds },
-            { "toll_z", toll_z },
+            { "N", N },           
             { "GBL_MAX", GBL_MAX },
             { "LCL_MAX", LCL_MAX },
             { "accepted_error", accepted_error },
@@ -76,15 +59,9 @@ namespace WPD
             { "freqs", freqs },
             { "K", K },
             { "Z_min", Z_min },
-            { "Z_max", Z_max },
-            { "Z_at_0_2", Z_at_0_2 },
-            { "Z_at_d_2", Z_at_d_2 },
-            { "Z_at_0_3", Z_at_0_3 },
-            { "Z_at_d_3", Z_at_d_3 },
+            { "Z_max", Z_max },            
             { "R_min", R_min },
-            { "R_max", R_max },
-            {"matching_dB", matching_dB},
-            {"isolation_dB", isolation_dB},
+            { "R_max", R_max },          
             {"split", split},
         };
     }

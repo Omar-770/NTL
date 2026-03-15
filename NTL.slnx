@@ -2,10 +2,13 @@
   <Configurations>
     <Platform Name="x64" />
   </Configurations>
-  <Project Path="NTL_bender/NTL_bender.vcxproj" Id="b0903f4f-ea5d-4c5a-bfd6-32e01eb54776">
+  <Project Path="NTL_assembler/NTL_assembler.vcxproj" Id="f4919317-ec46-4703-848b-ae1c404fd9f3">
     <BuildDependency Project="NTL_core/NTL_core.vcxproj" />
   </Project>
   <Project Path="NTL_core/NTL_core.vcxproj" Id="d4d39855-5f3b-4cf5-9387-2bc97a97c7a8" />
+  <Project Path="NTL_exporter/NTL_exporter.vcxproj" Id="c5073e75-a274-46ce-a29f-20e6014000f7">
+    <BuildDependency Project="NTL_core/NTL_core.vcxproj" />
+  </Project>
   <Project Path="NTL_sim/NTL_sim.vcxproj" Id="c0bfee49-974c-4d43-aab8-f143852891ef">
     <BuildDependency Project="NTL_core/NTL_core.vcxproj" />
   </Project>

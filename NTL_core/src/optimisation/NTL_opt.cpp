@@ -47,8 +47,6 @@ namespace NTL
 			{ "json_type", "setup" },
 			{ "setup_type", "NTL_opt"},
 			{ "N", N },
-			{ "lb", lb },
-			{ "ub", ub },
 			{ "toll_bounds", toll_bounds },
 			{ "toll_z", toll_z },
 			{ "GBL_MAX", GBL_MAX },

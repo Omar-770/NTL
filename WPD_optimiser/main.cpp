@@ -5,6 +5,7 @@
 #include <omp.h>
 #include <complex>
 #include <algorithm>
+#include <filesystem>
 #include "qt_plot.h"
 #include "models/ntl.h"
 #include "models/wpd.h"
@@ -49,7 +50,7 @@ int main(int argc, char* argv[])
 		wsim.add_window(nsim.z_profile(out2, "Out2-Z"));
 		wsim.add_window(nsim.z_profile(out3, "Out3-Z"));
 
-		wsim.sparams(wpd, setup.Zref, out2, out3);
+		wsim.sparams(wpd, setup.Zref, out2, out3, setup.K);
 		wsim.merge("WPD");
 
 		app.exec();
@@ -64,31 +65,17 @@ int main(int argc, char* argv[])
 			std::string folder;
 			std::cout << "Folder Name: ";
 			std::cin >> folder;
-			//Latex
-
-			std::cout << "Saving to CSVs...\n";
-
-			if (NTL::latex::wpd(wpd, out2, out3, folder, folder) &&
-				NTL::latex::sparams(wpd, out2, out3, setup.Zref, f_min, f_max, 1e6, setup.freqs, folder, folder) &&
-				NTL::latex::table_data(wpd, out2, out3, folder, folder))
-				std::cout << "CSVs save success\n";
-			else
-				std::cerr << "CSVs save failure\n";
 
 			std::cout << "Saving objects...\n";
 			double H = 1.6e-3;
 			//json
+			std::filesystem::create_directory(folder);
 			fh::wpd_to_file(wpd, folder + "/" + folder + "_wpd");
 			fh::ntl_to_file(out2, folder + "/" + folder + "_out2");
 			fh::ntl_to_file(out3, folder + "/" + folder + "_out3");
 			fh::ntl_to_file(wpd.get_ntl2(), folder + "/" + folder + "_ntl2");
 			fh::ntl_to_file(wpd.get_ntl3(), folder + "/" + folder + "_ntl3");
-			fh::setup_to_file<WPD::opt_setup>(setup, folder + "/" + folder + "_setup");
-			//AutoCAD Script
-			fh::export_geometry_scr(out2, H, folder + "/" + folder + "_out2");
-			fh::export_geometry_scr(out3, H, folder + "/" + folder + "_out3");
-			fh::export_geometry_scr(wpd.get_ntl2(), H, folder + "/" + folder + "_ntl2");
-			fh::export_geometry_scr(wpd.get_ntl3(), H, folder + "/" + folder + "_ntl3");
+			fh::setup_to_file<WPD::opt_setup>(setup, folder + "/" + folder + "_setup");			
 
 			std::cout << "\n\n\n=== Save Complete ===\n\n\n";
 		}

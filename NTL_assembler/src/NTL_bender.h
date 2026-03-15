@@ -1,11 +1,18 @@
-#include "bender.h"
-#include "common/helpers.h"
+#pragma once
 
+#include <string>
+#include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <iostream>
+#include <vector>
+#include <utility>
+#include <math.h>
+#include "models/ntl.h"
 
-std::vector<std::pair<double, double>> get_w_vector(const NTL::NTL& ntl, 
-	double start_pos, double end_pos, double substrate_height, double step)
+
+std::vector<std::pair<double, double>> inline get_w_vector(const NTL::NTL& ntl,
+	double start_pos, double end_pos, double substrate_height, double step = 1e-4)
 {
 	int n_steps = std::round((end_pos - start_pos) / step);
 
@@ -26,7 +33,8 @@ std::vector<std::pair<double, double>> get_w_vector(const NTL::NTL& ntl,
 	return w_h;
 }
 
-void seg(const NTL::NTL& ntl, double start_pos, double end_pos, double substrate_height, const std::string& filename, double step)
+void inline seg(const NTL::NTL& ntl, double start_pos, double end_pos,
+	double substrate_height, const std::string& filename, double step = 1e-4)
 {
 	if (start_pos < 0 || start_pos >= end_pos || end_pos >(ntl.get_d() + 1e-6))
 		throw std::runtime_error("Invalid start or end position");
@@ -52,7 +60,7 @@ void seg(const NTL::NTL& ntl, double start_pos, double end_pos, double substrate
 		stream << 1000 * w[i].first << "," << 0.5 * 1000 * w[i].second << "\n";
 	}
 
-	for (int i = w.size() - 1 ; i >= 0; i--)
+	for (int i = w.size() - 1; i >= 0; i--)
 	{
 		stream << 1000 * w[i].first << "," << -0.5 * 1000 * w[i].second << "\n";
 	}
@@ -66,15 +74,16 @@ void seg(const NTL::NTL& ntl, double start_pos, double end_pos, double substrate
 	std::cout << std::endl;
 }
 
-void arc(const NTL::NTL& ntl, double start_pos, double end_pos, double angle,
-	double substrate_height, const std::string& filename, double step)
+
+void inline arc(const NTL::NTL& ntl, double start_pos, double end_pos, double angle,
+	double substrate_height, const std::string& filename, double step = 1e-4)
 {
 	if (start_pos < 0 || start_pos >= end_pos || end_pos >(ntl.get_d() + 1e-6))
 		throw std::runtime_error("Invalid start or end position");
 
 	if (angle <= 0 || angle > 360)
 		throw std::invalid_argument("Angle must be between 0 and 360");
-	
+
 	std::fstream stream;
 	std::stringstream ss;
 	ss << std::fixed << std::setprecision(1);
@@ -82,7 +91,7 @@ void arc(const NTL::NTL& ntl, double start_pos, double end_pos, double angle,
 		<< "_ang_" << angle << ".scr";
 	std::string name = ss.str();
 	stream.open(name, std::ios_base::out);
-	
+
 	if (!stream.is_open())
 		throw std::runtime_error("Could not open file for AutoCAD export");
 
