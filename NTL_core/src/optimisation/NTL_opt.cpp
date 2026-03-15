@@ -118,6 +118,16 @@ namespace NTL
 		if (m_Z_at_0 < 1e-6 || m_Z_at_d < 1e-6)
 			throw(std::invalid_argument("Invalid impedance boundary conditions"));
 
+		if (m_lb.empty() || m_lb.size() != m_N)
+			m_lb.assign(m_N, -1.0);
+		if (m_ub.empty() || m_ub.size() != m_N)
+			m_ub.assign(m_N, 1.0);
+
+		if (m_toll_bounds.empty())
+			m_toll_bounds.assign(2, 1e-6);
+		if (m_toll_z.empty())
+			m_toll_z.assign(m_K, 1e-6);
+
 		omp_set_num_threads(std::min<int>(m_freqs.size(), 11));
 	}
 
