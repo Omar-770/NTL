@@ -44,6 +44,7 @@ namespace WPD
 		auto log_freq = m_freqs.cbegin();
 		auto log_freq_end = m_freqs.cend();
 
+		std::cout << std::endl;
 		for (double f = m_fmin; f < m_fmax; f += m_fstep)
 		{
 			matrix3x3cd S_matrix = wpd.S_matrix(f, Zl, K);

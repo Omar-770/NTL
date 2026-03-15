@@ -37,7 +37,6 @@ namespace NTL
 		std::string title;
 		if (m_title[0] == '\0')
 			title = mode == mag::abs ? "|Zin(f)|" : "|Zin(f)| dB";
-		std::cout << title << std::endl;
 
 		QMainWindow* window = m_sim.m_plotter.plot(Zin, "Zin", title.c_str());
 		m_sim.m_windows.push_back(window);
@@ -66,7 +65,6 @@ namespace NTL
 		std::string title;
 		if (m_title[0] == '\0')
 			title = "Zin (Phase)";
-		std::cout << title << std::endl;
 
 		QMainWindow* window = m_sim.m_plotter.plot(Zin, "Zin", title.c_str());
 		m_sim.m_windows.push_back(window);
@@ -232,11 +230,12 @@ namespace NTL
 		if (m_Zs.size() != m_Zl.size())
 			throw std::invalid_argument("Zs and Zl vector sizes must match in S-param simulation");
 
-
 		std::vector<std::vector<std::pair<double, double>>> vS11, vS12, vS21, vS22;
 
 		size_t num_loads = m_Zl.size();
-		double points = (m_sim.m_fmax - m_sim.m_fmin) / m_sim.m_fstep + 1;
+
+		// [FIX APPLIED]: Integer-based points to prevent dropping the final frequency
+		int points = std::round((m_sim.m_fmax - m_sim.m_fmin) / m_sim.m_fstep) + 1;
 
 		vS11.resize(num_loads); vS12.resize(num_loads);
 		vS21.resize(num_loads); vS22.resize(num_loads);
@@ -262,8 +261,16 @@ namespace NTL
 			std::complex<double> Zl_current = m_Zl[i];
 			std::complex<double> Zs_current = m_Zs[i];
 
-			for (double f = m_sim.m_fmin; f < m_sim.m_fmax; f += m_sim.m_fstep)
+			// [ADDED]: Initialize the iterator for the target logging frequencies
+			auto log_freq = m_sim.m_freqs.cbegin();
+			auto log_freq_end = m_sim.m_freqs.cend();
+
+			std::cout << std::endl;
+			// [FIX APPLIED]: Integer-based loop to guarantee exact steps
+			for (int step = 0; step < points; ++step)
 			{
+				double f = m_sim.m_fmin + step * m_sim.m_fstep;
+
 				auto S = m_ntl.S_matrix(f, Zs_current, Zl_current);
 
 				double v11 = std::abs(S(0, 0));
@@ -277,6 +284,17 @@ namespace NTL
 					v12 = 20 * std::log10(std::max(v12, 1e-15));
 					v21 = 20 * std::log10(std::max(v21, 1e-15));
 					v22 = 20 * std::log10(std::max(v22, 1e-15));
+				}
+
+				// [ADDED]: Logging block using the crossing threshold
+				if (log_freq != log_freq_end && f >= *log_freq - 1e-6)
+				{
+					std::cout << "[Load: " << char_labels[i] << " | Frequency: " << f << "]\n";
+					std::cout << "\tS11: " << v11 << (mode == mag::dB ? " dB\n" : "\n");
+					std::cout << "\tS12: " << v12 << (mode == mag::dB ? " dB\n" : "\n");
+					std::cout << "\tS21: " << v21 << (mode == mag::dB ? " dB\n" : "\n");
+					std::cout << "\tS22: " << v22 << (mode == mag::dB ? " dB\n\n" : "\n\n");
+					log_freq++;
 				}
 
 				vS11[i].emplace_back(f, v11);
