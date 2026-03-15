@@ -273,10 +273,10 @@ namespace NTL
 
 				if (mode == mag::dB)
 				{
-					v11 = 20 * std::log10(v11);
-					v12 = 20 * std::log10(v12);
-					v21 = 20 * std::log10(v21);
-					v22 = 20 * std::log10(v22);
+					v11 = 20 * std::log10(std::max(v11, 1e-15));
+					v12 = 20 * std::log10(std::max(v12, 1e-15));
+					v21 = 20 * std::log10(std::max(v21, 1e-15));
+					v22 = 20 * std::log10(std::max(v22, 1e-15));
 				}
 
 				vS11[i].emplace_back(f, v11);

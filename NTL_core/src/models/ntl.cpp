@@ -313,8 +313,8 @@ namespace NTL
 		}
 
 		double norm_factor = 2.0 * std::sqrt(Zs.real() * Zl.real());
-		S(0, 0) = (A * Zl + B - C * Zs * Zl - D * Zs) / denominator;
-		S(1, 1) = (-A * Zl + B - C * Zs * Zl + D * Zs) / denominator;
+		S(0, 0) = (A * Zl + B - C * std::conj(Zs) * Zl - D * std::conj(Zs)) / denominator;
+		S(1, 1) = (-A * std::conj(Zl) + B - C * Zs * std::conj(Zl) + D * Zs) / denominator;
 		S(0, 1) = ((A * D - B * C) * norm_factor) / denominator;
 		S(1, 0) = (norm_factor) / denominator;
 
@@ -461,7 +461,7 @@ namespace NTL
 
 	std::vector<std::pair<double, double>> NTL::get_Z_vec(double step_size) const
 	{
-		int num_steps = std::round(m_d / step_size);
+		int num_steps = std::ceil(m_d / step_size);
 
 		std::vector<std::pair<double, double>> z_vec;
 		z_vec.reserve(num_steps + 1);
@@ -482,7 +482,7 @@ namespace NTL
 
 	std::vector<std::pair<double, double>> NTL::get_w_h_vec(double step_size) const
 	{
-		int num_steps = std::round(m_d / step_size);
+		int num_steps = std::ceil(m_d / step_size);
 
 		std::vector<std::pair<double, double>> w_h_vec;
 		w_h_vec.reserve(num_steps + 1);

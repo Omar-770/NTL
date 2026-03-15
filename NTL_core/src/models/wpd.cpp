@@ -14,7 +14,11 @@ namespace WPD
         std::complex<double> D = T(1, 1);
 
         // Guard against division by zero (B=0)
-        if (std::abs(B) < 1e-12) B = 1e-12; // Simple numerical stability patch
+        if (std::abs(B) < 1e-12)
+        {
+            // If exactly 0, default to positive real, else maintain the phase
+            B = (B == std::complex<double>(0, 0)) ? 1e-12 : (B / std::abs(B)) * 1e-12;
+        }
 
         std::complex<double> invB = 1.0 / B;
         std::complex<double> invB2 = invB * invB;
@@ -255,15 +259,31 @@ namespace WPD
         double d3, const std::vector<double>& Cn3, int M, double R, double f, std::array<std::complex<double>, 3> Zl, int K)
     {
         matrix3x3cd Y_wpd = calculate_Y_matrix(Z0, er, d2, Cn2, d3, Cn3, M, R, f, K);
-        matrix3x3cd Z_ref = matrix3x3cd::Zero();
-        Z_ref(0, 0) = Zl[0];
-        Z_ref(1, 1) = Zl[1];
-        Z_ref(2, 2) = Zl[2];
 
-        matrix3x3cd Y_ref = Z_ref.inverse();
+        matrix3x3cd Y_ref = matrix3x3cd::Zero();
+        matrix3x3cd Y_ref_conj = matrix3x3cd::Zero();
+        matrix3x3cd F = matrix3x3cd::Zero();
+        matrix3x3cd F_inv = matrix3x3cd::Zero();
 
-        matrix3x3cd S = (Y_ref - Y_wpd) * (Y_ref + Y_wpd).inverse();
+        for (int i = 0; i < 3; ++i)
+        {
+            std::complex<double> y_i = 1.0 / Zl[i];
+            Y_ref(i, i) = y_i;
+            Y_ref_conj(i, i) = std::conj(y_i);
 
+            // Power waves require the real part of the reference admittance
+            double g_i = std::real(y_i);
+
+            // Safety clamp to prevent division by zero or sqrt of negative numbers
+            // if the termination is purely reactive (which shouldn't happen physically, but protects the math)
+            if (g_i < 1e-15) g_i = 1e-15;
+
+            F(i, i) = 1.0 / std::sqrt(g_i);
+            F_inv(i, i) = std::sqrt(g_i);
+        }
+
+        // Full Kurokawa N-port transformation
+        matrix3x3cd S = F * (Y_ref_conj - Y_wpd) * (Y_ref + Y_wpd).inverse() * F_inv;
 
         return S;
     }
@@ -279,14 +299,21 @@ namespace WPD
     {
         matrix3x3cd Y_sys = calculate_system_Y_matrix(wpd, out2, out3, f, K);
 
-        // Standard S-parameter conversion
         matrix3x3cd Z_ref = matrix3x3cd::Zero();
         Z_ref(0, 0) = Zref;
         Z_ref(1, 1) = Zref;
         Z_ref(2, 2) = Zref;
 
         matrix3x3cd Y_ref = Z_ref.inverse();
-        matrix3x3cd S = (Y_ref - Y_sys) * (Y_ref + Y_sys).inverse();
+
+        // Apply the complex conjugate to the reference admittance
+        matrix3x3cd Y_ref_conj = matrix3x3cd::Zero();
+        Y_ref_conj(0, 0) = std::conj(Y_ref(0, 0));
+        Y_ref_conj(1, 1) = std::conj(Y_ref(1, 1));
+        Y_ref_conj(2, 2) = std::conj(Y_ref(2, 2));
+
+        // F matrices cancel out since all ports share the exact same Zref
+        matrix3x3cd S = (Y_ref_conj - Y_sys) * (Y_ref + Y_sys).inverse();
 
         return S;
     }

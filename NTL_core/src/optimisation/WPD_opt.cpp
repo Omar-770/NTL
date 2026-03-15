@@ -496,13 +496,13 @@ namespace WPD
                 std::complex<double> A2 = T2(0, 0), B2 = T2(0, 1), C2 = T2(1, 0), D2 = T2(1, 1);
                 std::complex<double> Zin2 = (A2 * Zl2 + B2) / (C2 * Zl2 + D2);
                 std::complex<double> H2 = 1.0 / (A2 + B2 / Zl2);
-                std::complex<double> gamma2 = (Zs2 - std::conj(Zin2)) / (Zs2 + Zin2);
+                std::complex<double> gamma2 = (Zin2 - std::conj(Zs2)) / (Zin2 + Zs2);
 
                 matrix2x2cd T3 = NTL::calculate_T_matrix(m_Z0, m_er, m_d, Cn3, m_M, f, m_K);
                 std::complex<double> A3 = T3(0, 0), B3 = T3(0, 1), C3 = T3(1, 0), D3 = T3(1, 1);
                 std::complex<double> Zin3 = (A3 * Zl3 + B3) / (C3 * Zl3 + D3);
                 std::complex<double> H3 = 1.0 / (A3 + B3 / Zl3);
-                std::complex<double> gamma3 = (Zs3 - std::conj(Zin3)) / (Zs3 + Zin3);
+                std::complex<double> gamma3 = (Zin3 - std::conj(Zs3)) / (Zin3 + Zs3);
 
                 thread_sum_squares += std::pow(std::norm(gamma2), 2);
                 thread_sum_squares += std::pow(std::norm(gamma3), 2);
