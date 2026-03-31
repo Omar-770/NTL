@@ -1,7 +1,7 @@
 #include "latex.h"
 #include <fstream>
 
-bool NTL::latex::ntl(const NTL& ntl, const std::string& folder, const std::string& file)
+bool ntl_profiles(const NTL::NTL& ntl, const std::string& folder, const std::string& file)
 {
     std::filesystem::path dir = std::filesystem::path(folder);
     std::filesystem::create_directory(dir); 
@@ -33,26 +33,26 @@ bool NTL::latex::ntl(const NTL& ntl, const std::string& folder, const std::strin
     return true;
 }
 
-bool NTL::latex::wpd(const WPD::WPD& wpd, const NTL& out2, const NTL& out3, const std::string& folder, const std::string& file)
+bool wpd_profiles(const WPD::WPD& wpd, const NTL::NTL& out2, const NTL::NTL& out3, const std::string& folder, const std::string& file)
 {
-    if (!ntl(wpd.get_ntl2(), folder, file + "_arm2"))   return false;
-    if (!ntl(wpd.get_ntl3(), folder, file + "_arm3"))   return false;
-    if (!ntl(out2, folder, file + "_out2"))   return false;
-    if (!ntl(out3, folder, file + "_out3"))   return false;
+    if (!ntl_profiles(wpd.get_ntl2(), folder, file + "_arm2"))   return false;
+    if (!ntl_profiles(wpd.get_ntl3(), folder, file + "_arm3"))   return false;
+    if (!ntl_profiles(out2, folder, file + "_out2"))   return false;
+    if (!ntl_profiles(out3, folder, file + "_out3"))   return false;
 
 
     return true;
 }   
 
-bool NTL::latex::sparams(const WPD::WPD& wpd, const NTL& out2, const NTL& out3,
+bool wpd_sparams(const WPD::WPD& wpd, const NTL::NTL& out2, const NTL::NTL& out3,
     double Zref, double f_min, double f_max, double f_step, const std::vector<double>& freqs,
     const std::string& folder, const std::string& file)
 {
     std::filesystem::path dir = std::filesystem::path(folder);
     std::filesystem::create_directory(dir);
 
-    std::ofstream sp_file(dir / (file + "_sparams.csv"));
-    std::ofstream f_targets(dir / (file + "_targets.csv"));
+    std::ofstream sp_file(dir / (file + "_sparams_code.csv"));
+    std::ofstream f_targets(dir / (file + "_targets_code.csv"));
 
     if (!sp_file.is_open()) return false;
 
@@ -98,7 +98,7 @@ bool NTL::latex::sparams(const WPD::WPD& wpd, const NTL& out2, const NTL& out3,
     return true;
 }
 
-bool NTL::latex::table_data(const WPD::WPD& wpd, const NTL& out2, const NTL& out3, 
+bool wpd_table_data(const WPD::WPD& wpd, const NTL::NTL& out2, const NTL::NTL& out3,
     const std::string& folder, const std::string& file)
 {
     std::filesystem::path dir = std::filesystem::path(folder);
@@ -123,7 +123,7 @@ bool NTL::latex::table_data(const WPD::WPD& wpd, const NTL& out2, const NTL& out
         auto ntl3 = wpd.get_ntl3();
 
         // Helper to extract a specific term (C or S) from an NTL safely
-        auto get_coeff = [](const NTL& ntl, char type, int index) -> std::string {
+        auto get_coeff = [](const NTL::NTL& ntl, char type, int index) -> std::string {
             const auto& cn = ntl.get_Cn();
             if (cn.empty()) return "-";
 

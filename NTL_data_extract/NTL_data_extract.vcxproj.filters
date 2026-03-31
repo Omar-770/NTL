@@ -18,15 +18,12 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\AutoCAD.cpp">
+    <ClCompile Include="src\latex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\AutoCAD.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\export_WPD.h">
+    <ClInclude Include="src\latex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

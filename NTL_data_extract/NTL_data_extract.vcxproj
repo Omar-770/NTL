@@ -13,8 +13,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{c5073e75-a274-46ce-a29f-20e6014000f7}</ProjectGuid>
-    <RootNamespace>NTLexporter</RootNamespace>
+    <ProjectGuid>{f8f32f1e-2054-4530-ad36-618f96a407e2}</ProjectGuid>
+    <RootNamespace>NTLdataextract</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -79,11 +79,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\AutoCAD.cpp" />
+    <ClCompile Include="src\latex.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\AutoCAD.h" />
-    <ClInclude Include="src\export_WPD.h" />
+    <ClInclude Include="src\latex.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
