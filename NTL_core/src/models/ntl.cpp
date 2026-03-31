@@ -196,6 +196,61 @@ namespace NTL
 		}
 	}
 
+	matrix2x2cd calculate_T_matrix(const std::vector<double>& Z, const std::vector<double>& e_eff, double d, int M, double f, int K)
+	{
+		double _dz = d / K;
+		matrix2x2cd temp_Ti;
+
+		auto calculate_Ti = [](matrix2x2cd& T, const double& Z, const double& f, const double& d, const double& e_r) {
+			const double theta{ 2 * M_PI * f * std::sqrt(e_r) * d / M_C };
+			const double cos_theta{ std::cos(theta) };
+			const double sin_theta{ std::sin(theta) };
+
+			T(0, 0) = { cos_theta, 0 };
+			T(0, 1) = { 0, Z * sin_theta };
+			T(1, 0) = { 0, sin_theta / Z };
+			T(1, 1) = { cos_theta, 0 };
+			};
+
+		auto Z_ = Z.cbegin();
+		auto e_eff_ = e_eff.cbegin();
+
+		if (M == 0) // Even optimisation
+		{
+			matrix2x2cd T_half = matrix2x2cd::Identity();
+			int half_K = K / 2;
+			for (int i = 0; i < half_K; i++)
+			{				
+				calculate_Ti(temp_Ti, *Z_++, f, _dz, *e_eff_++);
+				T_half *= temp_Ti;
+			}
+
+			matrix2x2cd T_half_rev;
+			T_half_rev << T_half(1, 1), T_half(0, 1), T_half(1, 0), T_half(0, 0);
+
+			if (K % 2 == 0)
+			{
+				return T_half * T_half_rev;
+			}
+			else
+			{
+				calculate_Ti(temp_Ti, *Z_, f, _dz, *e_eff_);
+				return T_half * temp_Ti * T_half_rev;
+			}
+		}
+		else
+		{
+			matrix2x2cd T = matrix2x2cd::Identity();
+			for (int i = 0; i < K; i++)
+			{
+				calculate_Ti(temp_Ti, *Z_++, f, _dz, *e_eff_++);
+				T *= temp_Ti;
+			}
+
+			return T;
+		}
+	}
+
 	matrix2x2cd calculate_T_matrix(const NTL& ntl, double f, int K)
 	{
 		return calculate_T_matrix(ntl.get_Z0(), ntl.get_er(), ntl.get_d(), ntl.get_Cn(), ntl.get_M(), f, K);
@@ -286,6 +341,94 @@ namespace NTL
 			double zi = (double(k) + 0.5) * _dz;
 			for (int i = 0; i < N; i++)
 				dT_dCn[i] += L[k] * dT_dZ[k] * R[k] * Z[k] * (i < N - M ? std::cos(2 * M_PI * zi / d * double(i))
+					: std::sin(2 * M_PI * zi / d * double(i - N + M + 1)));
+		}
+
+		return { L[K - 1] * T[K - 1], dT_dCn };
+	}
+
+	std::pair<matrix2x2cd, std::vector<matrix2x2cd>> calculate_T_matrix_with_grad(const std::vector<double>& Z, const std::vector<double>& e_eff, double d, int N, int M, double f, int K)
+	{
+		double _dz = d / K;
+	
+		std::vector<matrix2x2cd> L(K), R(K), T(K), dT_dZ(K), dT_dCn(N, matrix2x2cd::Zero());
+
+		auto Z_ = Z.cbegin();
+		auto e_eff_ = e_eff.cbegin();
+
+		auto calculate_Ti = [](matrix2x2cd& T, const double& Z, const double& f, const double& d, const double& e_r) {
+			const double theta{ 2 * M_PI * f * std::sqrt(e_r) * d / M_C };
+			const double cos_theta{ std::cos(theta) };
+			const double sin_theta{ std::sin(theta) };
+
+			T(0, 0) = { cos_theta, 0 };
+			T(0, 1) = { 0, Z * sin_theta };
+			T(1, 0) = { 0, sin_theta / Z };
+			T(1, 1) = { cos_theta, 0 };
+			};
+
+		matrix2x2cd temp_T;
+		double dZ = 1e-6;
+
+		if (M == 0) // Even optimisaton
+		{
+			int half_K = (K + 1) / 2;
+
+			// Calculate
+			for (int i = 0; i < half_K; i++)
+			{			
+				calculate_Ti(T[i], *Z_, f, _dz, *e_eff_);
+				calculate_Ti(temp_T, *Z_++ + dZ, f, _dz, *e_eff_++);
+				dT_dZ[i] = (temp_T - T[i]) / dZ;
+			}
+
+			// Mirror
+			for (int i = half_K; i < K; i++)
+			{
+				T[i] = T[K - 1 - i];
+				dT_dZ[i] = dT_dZ[K - 1 - i];
+			}
+
+			// Calculate
+			L[0] = matrix2x2cd::Identity();
+			for (int i = 1; i < K; i++)
+				L[i] = L[i - 1] * T[i - 1];
+
+			// Mirror
+			for (int i = 0; i < K; i++)
+			{
+				R[K - 1 - i] << L[i](1, 1), L[i](0, 1), L[i](1, 0), L[i](0, 0);
+			}
+
+		}
+		else
+		{
+			// Calculate
+			for (int i = 0; i < K; i++)
+			{
+				calculate_Ti(T[i], *Z_, f, _dz, *e_eff_);
+				calculate_Ti(temp_T, *Z_++ + dZ, f, _dz, *e_eff_++);
+				dT_dZ[i] = (temp_T - T[i]) / dZ;
+			}
+
+			// Calculate
+			L[0] = matrix2x2cd::Identity();
+			R[K - 1] = matrix2x2cd::Identity();
+			for (int i = 1; i < K; i++)
+			{
+				L[i] = L[i - 1] * T[i - 1];
+				R[K - 1 - i] = T[K - i] * R[K - i];
+			}
+
+		}
+
+		// Final 
+		for (int k = 0; k < K; k++)
+		{
+			double zi = (double(k) + 0.5) * _dz;
+			double z_val = (M == 0 && k >= (K + 1) / 2) ? Z[K - 1 - k] : Z[k];
+			for (int i = 0; i < N; i++)
+				dT_dCn[i] += L[k] * dT_dZ[k] * R[k] * z_val * (i < N - M ? std::cos(2 * M_PI * zi / d * double(i))
 					: std::sin(2 * M_PI * zi / d * double(i - N + M + 1)));
 		}
 

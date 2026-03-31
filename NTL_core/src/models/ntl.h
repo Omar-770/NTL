@@ -41,10 +41,15 @@ namespace NTL
 
 	matrix2x2cd calculate_T_matrix(double Z0, double er, double d, const std::vector<double>& Cn, int M,
 		double f, int K = 50);
+
+	matrix2x2cd calculate_T_matrix(const std::vector<double>& Z, const std::vector<double>& e_eff, double d, int M,
+		double f, int K = 50);
 	matrix2x2cd calculate_T_matrix(const NTL& ntl, double f, int K = 50);
 
 	std::pair<matrix2x2cd, std::vector<matrix2x2cd>> calculate_T_matrix_with_grad(
 		double Z0, double er, double d, const std::vector<double>& Cn, int M, double f, int K = 50);
+	std::pair<matrix2x2cd, std::vector<matrix2x2cd>> calculate_T_matrix_with_grad(
+		const std::vector<double>& Z, const std::vector<double>& e_eff, double d, int N, int M, double f, int K = 50);
 
 
 	matrix2x2cd calculate_S_matrix(double Z0, double er, double d, const std::vector<double>& Cn, int M,
