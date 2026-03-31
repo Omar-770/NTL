@@ -14,18 +14,20 @@
     <ClInclude Include="src\common\enums.h" />
     <ClInclude Include="src\common\file_handler.h" />
     <ClInclude Include="src\common\helpers.h" />
-    <ClInclude Include="src\common\latex.h" />
+    <ClInclude Include="src\models\flt.h" />
     <ClInclude Include="src\models\ntl.h" />
     <ClInclude Include="src\models\wpd.h" />
+    <ClInclude Include="src\optimisation\flt_opt.h" />
     <ClInclude Include="src\optimisation\NTL_opt.h" />
     <ClInclude Include="src\optimisation\optimiser.h" />
     <ClInclude Include="src\optimisation\WPD_opt.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\common\file_handler.cpp" />
-    <ClCompile Include="src\common\latex.cpp" />
+    <ClCompile Include="src\models\flt.cpp" />
     <ClCompile Include="src\models\ntl.cpp" />
     <ClCompile Include="src\models\wpd.cpp" />
+    <ClCompile Include="src\optimisation\flt_opt.cpp" />
     <ClCompile Include="src\optimisation\NTL_opt.cpp" />
     <ClCompile Include="src\optimisation\optimiser.cpp" />
     <ClCompile Include="src\optimisation\WPD_opt.cpp" />
@@ -89,6 +91,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

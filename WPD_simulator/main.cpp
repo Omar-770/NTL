@@ -42,6 +42,8 @@ int main(int argc, char* argv[])
 		double f_step = 1e6;
 
 		//simulate 	
+
+		std::cout << "\n\tR = " << wpd.get_R() << std::endl;
 		
 		std::cout << "================================\n";
 		std::cout << "     TRANSMISSION MATRICES\n";
@@ -59,7 +61,7 @@ int main(int argc, char* argv[])
 			std::cout << T2 << std::endl;
 			std::cout << "\nT3:\n";
 			std::cout << T3 << std::endl;
-		}
+					}
 
 		std::cout << "\n\t-> Output Arms\n";
 
@@ -73,6 +75,69 @@ int main(int argc, char* argv[])
 			std::cout << T2 << std::endl;
 			std::cout << "\nT3:\n";
 			std::cout << T3 << std::endl;
+		}
+
+		std::cout << "\n================================\n";
+		std::cout << "         Odd Mode Gamma\n";
+		std::cout << "================================\n";
+		
+		auto split = setup.split.cbegin();
+		for (auto& f : setup.freqs)
+		{
+			auto T2 = ntl2.T_matrix(f, 100);
+			auto T3 = ntl3.T_matrix(f, 100);
+			
+			double R2 = std::sqrt(*split) * setup.Zref;
+			std::complex<double> ratio2 = T2(0, 1) / T2(0, 0);
+			std::complex<double> Zeq2 = ratio2 * R2 / (ratio2 + R2);
+			std::complex<double> GammaOdd2 = (Zeq2 - R2) / (Zeq2 + R2);
+
+			double R3 = setup.Zref / std::sqrt(*split) ;
+			std::complex<double> ratio3 = T3(0, 1) / T3(0, 0);
+			std::complex<double> Zeq3 = ratio3 * R3 / (ratio3 + R3);
+			std::complex<double> GammaOdd3 = (Zeq3 - R3) / (Zeq3 + R3);
+			++split;
+
+			std::cout << "\n[Frequency: " << f << "]\n";
+			std::cout << "\nGamma2Odd:\n";
+			std::cout << 20 * std::log10(std::max<double>(std::abs(GammaOdd2), 1e-12)) << std::endl;
+			std::cout << "\nGamma3Odd:\n";
+			std::cout << 20 * std::log10(std::max<double>(std::abs(GammaOdd3), 1e-12)) << std::endl;
+			
+		}
+
+		split = setup.split.cbegin();
+
+		std::cout << "\n================================\n";
+		std::cout << "       Electrical Lengths\n";
+		std::cout << "================================\n";
+
+		std::cout << "\n\t-> Main Arms\n";
+
+		for (auto& f : setup.freqs)
+		{
+			double theta2 = ntl2.electrical_length(f, 100);
+			double theta3 = ntl3.electrical_length(f, 100);
+
+			std::cout << "\n[Frequency: " << f << "]\n";
+			std::cout << "\ntheta2:\n";
+			std::cout << theta2 << std::endl;
+			std::cout << "\ntheta3:\n";
+			std::cout << theta3 << std::endl;
+		}
+
+		std::cout << "\n\t-> Output Arms\n";
+
+		for (auto& f : setup.freqs)
+		{
+			double theta2 = out2.electrical_length(f, 100);
+			double theta3 = out3.electrical_length(f, 100);
+
+			std::cout << "\n[Frequency: " << f << "]\n";
+			std::cout << "\ntheta2:\n";
+			std::cout << theta2 << std::endl;
+			std::cout << "\ntheta3:\n";
+			std::cout << theta3 << std::endl;
 		}
 
 		std::cout << "\n================================\n";

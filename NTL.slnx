@@ -2,11 +2,15 @@
   <Configurations>
     <Platform Name="x64" />
   </Configurations>
-  <Project Path="NTL_assembler/NTL_assembler.vcxproj" Id="f4919317-ec46-4703-848b-ae1c404fd9f3">
+  <Project Path="flt_optimiser/flt_optimiser.vcxproj" Id="cf244d81-db76-4a6a-bb7b-706840a637eb">
+    <BuildDependency Project="NTL_core/NTL_core.vcxproj" />
+    <BuildDependency Project="NTL_sim/NTL_sim.vcxproj" />
+  </Project>
+  <Project Path="NTL_AutoCAD/NTL_AutoCAD.vcxproj" Id="a362dc17-ca32-4f2c-9338-45a2771f36ea">
     <BuildDependency Project="NTL_core/NTL_core.vcxproj" />
   </Project>
   <Project Path="NTL_core/NTL_core.vcxproj" Id="d4d39855-5f3b-4cf5-9387-2bc97a97c7a8" />
-  <Project Path="NTL_exporter/NTL_exporter.vcxproj" Id="c5073e75-a274-46ce-a29f-20e6014000f7">
+  <Project Path="NTL_data_extract/NTL_data_extract.vcxproj" Id="f8f32f1e-2054-4530-ad36-618f96a407e2">
     <BuildDependency Project="NTL_core/NTL_core.vcxproj" />
   </Project>
   <Project Path="NTL_optimiser/NTL_optimiser.vcxproj" Id="2dd2ca7d-8832-4e50-9013-188af27ae433">
@@ -23,6 +27,7 @@
   <Project Path="WPD_optimiser/WPD_optimiser.vcxproj" Id="6152ee01-ce5e-468d-a749-d4a84598cefa">
     <BuildDependency Project="NTL_core/NTL_core.vcxproj" />
     <BuildDependency Project="NTL_sim/NTL_sim.vcxproj" />
+    <BuildDependency Project="WPD_simulator/WPD_simulator.vcxproj" />
   </Project>
   <Project Path="WPD_simulator/WPD_simulator.vcxproj" Id="d37aa0f9-41e4-4efd-90d0-0b161a3585c4">
     <BuildDependency Project="NTL_core/NTL_core.vcxproj" />
