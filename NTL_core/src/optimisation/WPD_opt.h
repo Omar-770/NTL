@@ -50,6 +50,8 @@ namespace WPD
 		WPD wpd;
 		NTL::NTL output2;
 		NTL::NTL output3;
+		NTL::opt_setup out2_setup;
+		NTL::opt_setup out3_setup;
 	};
 
 	class opt : public optimiser
@@ -105,6 +107,8 @@ namespace WPD
 		WPD m_wpd;
 		std::array<NTL::NTL, 4> m_ntl;
 		double m_R;
+		NTL::opt_setup m_out2_setup;
+		NTL::opt_setup m_out3_setup;
 
 	private:
 		// nlopt functions

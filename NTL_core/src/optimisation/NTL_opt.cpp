@@ -62,7 +62,7 @@ namespace NTL
 			{ "Z_min", Z_min },
 			{ "Z_max", Z_max },
 			{ "Z_at_0", Z_at_0 },
-			{ "Z_at_0", Z_at_d }
+			{ "Z_at_d", Z_at_d }
 		};
 	}
 
@@ -209,6 +209,15 @@ namespace NTL
 	{
 
 		double sum_squares{};
+		double _dz = m_d / m_K;
+		std::vector<double> Z((m_M == 0) ? (m_K % 2 == 0 ? m_K / 2 : m_K / 2 + 1) : m_K);
+		std::vector<double> e_eff(Z.size());
+
+		for (int i = 0; i < Z.size(); i++)
+		{
+			Z[i] = calculate_Z(m_Z0, m_d, Cn, m_M, (double(i) + 0.5) * _dz);
+			e_eff[i] = calculate_er_eff(Z[i], m_er);
+		}
 
 		#pragma omp parallel
 		{
@@ -220,7 +229,7 @@ namespace NTL
 				std::complex<double> Zl = m_Zl[i];
 				std::complex<double> Zs = m_Zs[i];
 
-				matrix2x2cd T = calculate_T_matrix(m_Z0, m_er, m_d, Cn, m_M, f, m_K);
+				matrix2x2cd T = calculate_T_matrix(Z, e_eff, m_d, m_M, f, m_K);
 
 				std::complex<double> a = T(0, 0), b = T(0, 1), c = T(1, 0), d = T(1, 1);
 				std::complex<double> Zin = (Zl * a + b) / (Zl * c + d);
@@ -265,6 +274,16 @@ namespace NTL
 
 		if (!grad.empty())
 			std::fill(grad.begin(), grad.end(), 0.0);
+
+		double _dz = m_d / m_K;
+		std::vector<double> Z((m_M == 0) ? (m_K % 2 == 0 ? m_K / 2 : m_K / 2 + 1) : m_K);
+		std::vector<double> e_eff(Z.size());
+
+		for (int i = 0; i < Z.size(); i++)
+		{
+			Z[i] = calculate_Z(m_Z0, m_d, Cn, m_M, (double(i) + 0.5) * _dz);
+			e_eff[i] = calculate_er_eff(Z[i], m_er);
+		}
 		
 		#pragma omp parallel
 		{
@@ -278,7 +297,7 @@ namespace NTL
 				std::complex<double> Zl = m_Zl[i];
 				std::complex<double> Zs = m_Zs[i];
 
-				auto [T, dT] = calculate_T_matrix_with_grad(m_Z0, m_er, m_d, Cn, m_M, f, m_K);
+				auto [T, dT] = calculate_T_matrix_with_grad(Z, e_eff, m_d, m_N, m_M, f, m_K);
 
 				std::complex<double> A = T(0, 0);
 				std::complex<double> B = T(0, 1);
