@@ -218,9 +218,9 @@ namespace NTL
 		/// RESULTS ///
 		if (output)
 		{
-			std::cout << "==============================================" << std::endl;
-			std::cout << "           OPTIMIZATION COMPLETE" << std::endl;
-			std::cout << "==============================================" << std::endl;
+			std::cout << "\n==============================================" << std::endl;
+			std::cout << "           OPTIMISATION COMPLETE" << std::endl;
+			std::cout << "==============================================\n" << std::endl;
 			std::cout << "Final best error found: " << overall_best_error << "\t at ";
 			std::cout << overall_best_Cn << std::endl;
 		}
