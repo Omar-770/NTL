@@ -1,5 +1,3 @@
-#pragma once
-
 #include "NTL_bender.h"
 #include <iostream>
 #include <fstream>
@@ -8,7 +6,7 @@
 
 namespace fh = NTL::fh;
 
-inline void NTL_free_style()
+int main()
 {
 	std::string file_name{};
 	double start_pos{};
@@ -151,4 +149,5 @@ inline void NTL_free_style()
 		}
 	}
 
+	return 0;
 }

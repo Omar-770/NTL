@@ -13,8 +13,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{f4919317-ec46-4703-848b-ae1c404fd9f3}</ProjectGuid>
-    <RootNamespace>NTLassembler</RootNamespace>
+    <ProjectGuid>{a362dc17-ca32-4f2c-9338-45a2771f36ea}</ProjectGuid>
+    <RootNamespace>NTLAutoCAD</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -79,12 +79,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\assemble_WPD.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\assemble_WPD.h" />
     <ClInclude Include="src\NTL_bender.h" />
-    <ClInclude Include="src\NTL_freestyle.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
