@@ -16,7 +16,6 @@
 #include "common/file_handler.h"
 #include "common/enums.h"
 #include "common/helpers.h"
-#include "common/latex.h"
 
 namespace fh = NTL::fh;
 
@@ -75,7 +74,9 @@ int main(int argc, char* argv[])
 			fh::ntl_to_file(out3, folder + "/" + folder + "_out3");
 			fh::ntl_to_file(wpd.get_ntl2(), folder + "/" + folder + "_ntl2");
 			fh::ntl_to_file(wpd.get_ntl3(), folder + "/" + folder + "_ntl3");
-			fh::setup_to_file<WPD::opt_setup>(setup, folder + "/" + folder + "_setup");			
+			fh::setup_to_file<WPD::opt_setup>(setup, folder + "/" + folder + "_setup");	
+			fh::setup_to_file<NTL::opt_setup>(result.out2_setup, folder + "/" + folder + "_out2_setup");
+			fh::setup_to_file<NTL::opt_setup>(result.out3_setup, folder + "/" + folder + "_out3_setup");
 
 			std::cout << "\n\n\n=== Save Complete ===\n\n\n";
 		}
