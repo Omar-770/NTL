@@ -1,0 +1,93 @@
+#pragma once
+
+#include <cmath>
+#include <complex>
+#include <Eigen/Dense>
+#include <utility>
+#include <vector>
+#include <omp.h>
+
+#include "models/ntl.h"
+
+#ifdef M_PI
+#undef M_PI
+#endif 
+
+namespace TJ
+{
+	class TJ;
+	struct TJ_DATA;
+
+	using matrix2x2cd = Eigen::Matrix<std::complex<double>, 2, 2>;
+	using matrix3x3cd = Eigen::Matrix<std::complex<double>, 3, 3>;
+	using matrix4x4cd = Eigen::Matrix<std::complex<double>, 4, 4>;
+	using matrix5x5cd = Eigen::Matrix<std::complex<double>, 5, 5>;
+
+	inline constexpr double M_PI = 3.14159265358979311599796346854;
+	inline constexpr double M_C = 299792458;
+
+
+	matrix3x3cd calculate_Y_matrix(double Z0, double er, double d2, const std::vector<double>& Cn2, int M2,
+		double d3, const std::vector<double>& Cn3, int M3, double f, int K = 50);
+	matrix3x3cd calculate_Y_matrix(const TJ& wpd, double f, int K = 50);
+
+	matrix3x3cd calculate_S_matrix(double Z0, double er, double d2, const std::vector<double>& Cn2, int M2,
+		double d3, const std::vector<double>& Cn3, int M3, double f, std::array<std::complex<double>, 3> Zl, int K = 50);
+	matrix3x3cd calculate_S_matrix(const TJ& tj, double f, std::array<std::complex<double>, 3> Zl, int K = 50);
+
+
+	std::pair<matrix3x3cd, std::vector<matrix3x3cd>> calculate_S_matrix_with_grad(
+		double Z0, double er, double d2, const std::vector<double>& Cn2, int M2,
+		double d3, const std::vector<double>& Cn3, int M3, double f,
+		std::array<std::complex<double>, 3> Zl, int K = 50);
+
+	struct TJ_DATA
+	{
+		NTL::NTL ntl2, ntl3;
+	};
+
+	class TJ
+	{
+	public:
+		TJ() : m_ntl2(), m_ntl3(), m_Z0(0)
+		{
+
+		}
+
+		TJ(const NTL::NTL& ntl2, const NTL::NTL& ntl3)
+			: m_ntl2(ntl2), m_ntl3(ntl3), m_Z0(ntl2.get_Z0()), m_er(ntl2.get_er())
+		{
+			if (ntl2.get_Z0() != ntl3.get_Z0() || ntl2.get_er() != ntl3.get_er())
+				throw(std::logic_error("Attempting to initialise a WPD using two different substrates"));
+		}
+
+		TJ(const TJ_DATA& data)
+			:m_ntl2(data.ntl2), m_ntl3(data.ntl3), m_Z0(data.ntl2.get_Z0()), m_er(data.ntl2.get_er())
+		{
+			if (data.ntl2.get_Z0() != data.ntl3.get_Z0() || data.ntl2.get_er() != data.ntl3.get_er())
+				throw(std::logic_error("Attempting to initialise a WPD using two different substrates"));
+		}
+
+		matrix3x3cd Y_matrix(double f, int K = 50) const;
+		matrix3x3cd S_matrix(double f, std::array<std::complex<double>, 3> Zl, int K = 50) const;
+
+	private:
+		NTL::NTL m_ntl2, m_ntl3;
+		double m_Z0;
+		double m_er;
+
+	public:
+		//setters and getters
+		void set_Z0(const double& Z0) { m_Z0 = Z0; m_ntl2.set_Z0(Z0); m_ntl3.set_Z0(Z0); }
+		void set_er(const double& er) { m_er = er; m_ntl2.set_er(er); m_ntl3.set_er(er); }
+		void set_arms(const NTL::NTL& ntl2, const NTL::NTL& ntl3) {
+			if (ntl2.get_Z0() != ntl3.get_Z0() || ntl2.get_er() != ntl3.get_er())
+				throw(std::logic_error("Attempting to set a WPD using two different substrates")); m_ntl2 = ntl2; m_ntl3 = ntl3;
+		}
+
+		NTL::NTL get_ntl2() const { return m_ntl2; }
+		NTL::NTL get_ntl3() const { return m_ntl3; }
+		double get_Z0() const { return m_Z0; }
+		double get_er() const { return m_er; }
+	};
+}

@@ -5,6 +5,7 @@
 #include <fstream>
 #include "models/ntl.h"
 #include "models/wpd.h"
+#include "models/tj.h"
 #include "optimisation/NTL_opt.h"
 
 namespace nlohmann {
@@ -49,6 +50,10 @@ namespace NTL::fh
 	json wpd_to_json(const WPD::WPD& ntl, const std::string& readme = std::string());
 	WPD::WPD json_to_wpd(const json& j);
 
+	//TJ to json
+	json tj_to_json(const TJ::TJ& tj, const std::string& readme = std::string());
+	TJ::TJ json_to_tj(const json& j);
+
 	//setup to json
 	template<class T>
 	json setup_to_json(const T& setup, const std::string& readme = std::string())
@@ -79,6 +84,10 @@ namespace NTL::fh
 	//WPD to file
 	std::fstream wpd_to_file(const WPD::WPD& wpd, const std::string& name, const std::string& readme = std::string());
 	WPD::WPD file_to_wpd(const std::string& name);
+
+	//TJ to file
+	std::fstream tj_to_file(const TJ::TJ& tj, const std::string& name, const std::string& readme = std::string());
+	TJ::TJ file_to_tj(const std::string& name);
 
 	//setup to file
 	template<typename T>

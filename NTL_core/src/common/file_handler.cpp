@@ -109,6 +109,52 @@ namespace NTL::fh
 			j.at("R"));
 	}
 
+	json tj_to_json(const TJ::TJ& tj, const std::string& readme)
+	{
+		if (tj.get_ntl2().get_Cn().empty() || tj.get_ntl3().get_Cn().empty())
+			throw(std::logic_error("Attempted to write an empty NTL into a json object"));
+
+		json j1 = {
+			{"json_type", "TJ"},
+			{"Z0", tj.get_Z0()},
+			{"e_r", tj.get_er()},
+			{"readme", readme}
+		};
+
+		json j2 = ntl_to_json(tj.get_ntl2());
+		j2.erase("json_type");
+		j2.erase("readme");
+		j2.erase("Z0");
+		j2.erase("e_r");
+		rename_json_element<double>(j2, "d", "d-2");
+		rename_json_element<std::vector<double>>(j2, "Cn", "Cn2");
+		rename_json_element<double>(j2, "M", "M-2");
+
+		json j3 = ntl_to_json(tj.get_ntl3());
+		j3.erase("json_type");
+		j3.erase("readme");
+		j3.erase("Z0");
+		j3.erase("e_r");
+		rename_json_element<double>(j3, "d", "d-3");
+		rename_json_element<std::vector<double>>(j3, "Cn", "Cn3");
+		rename_json_element<double>(j3, "M", "M-3");
+
+		json j_total = j1;
+		j_total.merge_patch(j2);
+		j_total.merge_patch(j3);
+
+		return j_total;;
+	}
+
+	TJ::TJ json_to_tj(const json& j)
+	{
+		if (j.at("json_type") != "TJ")
+			throw(std::logic_error("Attempted to read a WPD from a different json object"));
+
+		return TJ::TJ(NTL(j.at("Z0"), j.at("e_r"), j.at("d-2"), j.at("Cn2"), j.at("M-2")),
+			NTL(j.at("Z0"), j.at("e_r"), j.at("d-3"), j.at("Cn3"), j.at("M-3")));
+	}
+
 	void export_geometry_csv(const NTL& ntl, double substrate_height, const std::string& filename, double step)
 	{
 		// Get the (z, W/H) points from the NTL model
@@ -265,5 +311,13 @@ namespace NTL::fh
 	WPD::WPD file_to_wpd(const std::string& name)
 	{
 		return json_to_wpd(file_to_json(name));
+	}
+	std::fstream tj_to_file(const TJ::TJ& tj, const std::string& name, const std::string& readme)
+	{
+		return json_to_file(tj_to_json(tj, readme), name);
+	}
+	TJ::TJ file_to_tj(const std::string& name)
+	{
+		return json_to_tj(file_to_json(name));
 	}
 }
