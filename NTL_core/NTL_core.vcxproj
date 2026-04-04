@@ -16,20 +16,24 @@
     <ClInclude Include="src\common\helpers.h" />
     <ClInclude Include="src\models\flt.h" />
     <ClInclude Include="src\models\ntl.h" />
+    <ClInclude Include="src\models\tj.h" />
     <ClInclude Include="src\models\wpd.h" />
     <ClInclude Include="src\optimisation\flt_opt.h" />
     <ClInclude Include="src\optimisation\NTL_opt.h" />
     <ClInclude Include="src\optimisation\optimiser.h" />
+    <ClInclude Include="src\optimisation\TJ_opt.h" />
     <ClInclude Include="src\optimisation\WPD_opt.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\common\file_handler.cpp" />
     <ClCompile Include="src\models\flt.cpp" />
     <ClCompile Include="src\models\ntl.cpp" />
+    <ClCompile Include="src\models\tj.cpp" />
     <ClCompile Include="src\models\wpd.cpp" />
     <ClCompile Include="src\optimisation\flt_opt.cpp" />
     <ClCompile Include="src\optimisation\NTL_opt.cpp" />
     <ClCompile Include="src\optimisation\optimiser.cpp" />
+    <ClCompile Include="src\optimisation\TJ_opt.cpp" />
     <ClCompile Include="src\optimisation\WPD_opt.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

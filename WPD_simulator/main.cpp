@@ -35,6 +35,8 @@ int main(int argc, char* argv[])
 		auto R = fh::file_to_json(folder_name + "/" + folder_name + "_wpd").at("R");
 		auto setup = fh::file_to_setup<WPD::opt_setup>(folder_name + "/" + folder_name + "_setup");
 
+		int K = 2 * setup.K;
+
 		WPD::WPD wpd(ntl2, ntl3, R);
 
 		double f_min = 1e7;
@@ -53,8 +55,8 @@ int main(int argc, char* argv[])
 
 		for (auto& f : setup.freqs)
 		{
-			auto T2 = ntl2.T_matrix(f, 100);
-			auto T3 = ntl3.T_matrix(f, 100);
+			auto T2 = ntl2.T_matrix(f, K);
+			auto T3 = ntl3.T_matrix(f, K);
 
 			std::cout << "\n[Frequency: " << f << "]\n";
 			std::cout << "\nT2:\n";
@@ -67,8 +69,8 @@ int main(int argc, char* argv[])
 
 		for (auto& f : setup.freqs)
 		{
-			auto T2 = out2.T_matrix(f, 100);
-			auto T3 = out3.T_matrix(f, 100);
+			auto T2 = out2.T_matrix(f, K);
+			auto T3 = out3.T_matrix(f, K);
 
 			std::cout << "\n[Frequency: " << f << "]\n";
 			std::cout << "\nT2:\n";
@@ -84,8 +86,8 @@ int main(int argc, char* argv[])
 		auto split = setup.split.cbegin();
 		for (auto& f : setup.freqs)
 		{
-			auto T2 = ntl2.T_matrix(f, 100);
-			auto T3 = ntl3.T_matrix(f, 100);
+			auto T2 = ntl2.T_matrix(f, K);
+			auto T3 = ntl3.T_matrix(f, K);
 			
 			double R2 = std::sqrt(*split) * setup.Zref;
 			std::complex<double> ratio2 = T2(0, 1) / T2(0, 0);
@@ -116,8 +118,8 @@ int main(int argc, char* argv[])
 
 		for (auto& f : setup.freqs)
 		{
-			double theta2 = ntl2.electrical_length(f, 100);
-			double theta3 = ntl3.electrical_length(f, 100);
+			double theta2 = ntl2.electrical_length(f, K);
+			double theta3 = ntl3.electrical_length(f, K);
 
 			std::cout << "\n[Frequency: " << f << "]\n";
 			std::cout << "\ntheta2:\n";
@@ -130,8 +132,8 @@ int main(int argc, char* argv[])
 
 		for (auto& f : setup.freqs)
 		{
-			double theta2 = out2.electrical_length(f, 100);
-			double theta3 = out3.electrical_length(f, 100);
+			double theta2 = out2.electrical_length(f, K);
+			double theta3 = out3.electrical_length(f, K);
 
 			std::cout << "\n[Frequency: " << f << "]\n";
 			std::cout << "\ntheta2:\n";
@@ -159,7 +161,7 @@ int main(int argc, char* argv[])
 		wsim.add_window(nsim.w_h_profile(out3, "Out3"));
 		wsim.add_window(nsim.z_profile(out3, "Out3"));
 
-		wsim.sparams(wpd, setup.Zref, out2, out3, 100);
+		wsim.sparams(wpd, setup.Zref, out2, out3, K);
 
 		wsim.merge("WPD");		
 		

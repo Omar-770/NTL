@@ -81,7 +81,7 @@ namespace WPD
 		m_R_min = setup.R_min;
 		m_R_max = setup.R_max;
 		m_split = setup.split;
-
+		
 		if (m_M > m_N)
 			throw(std::invalid_argument("Sine terms must be fewer or equal to the number of terms"));
 		if (m_split.size() < m_freqs.size() && m_split.size() != 1)
@@ -434,7 +434,7 @@ namespace WPD
 
 		double best_R_guess = m_R_min;
 		double min_cost = std::numeric_limits<double>::max();
-		int sweep_points = 100;
+		int sweep_points = 1000;
 		double step = (m_R_max - m_R_min) / sweep_points;
 
 		for (int i = 0; i <= sweep_points; ++i)

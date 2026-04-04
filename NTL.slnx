@@ -24,6 +24,11 @@
     <BuildDependency Project="NTL_core/NTL_core.vcxproj" />
     <BuildDependency Project="NTL_sim/NTL_sim.vcxproj" />
   </Project>
+  <Project Path="TJ_optimiser/TJ_optimiser.vcxproj" Id="bb1837af-0b90-4096-9fd0-8af309567ce6">
+    <BuildDependency Project="NTL_core/NTL_core.vcxproj" />
+    <BuildDependency Project="NTL_sim/NTL_sim.vcxproj" />
+  </Project>
+  <Project Path="TJ_simulator/TJ_simulator.vcxproj" Id="cd1820f0-724f-4023-888e-0e1517288f76" />
   <Project Path="WPD_optimiser/WPD_optimiser.vcxproj" Id="6152ee01-ce5e-468d-a749-d4a84598cefa">
     <BuildDependency Project="NTL_core/NTL_core.vcxproj" />
     <BuildDependency Project="NTL_sim/NTL_sim.vcxproj" />
