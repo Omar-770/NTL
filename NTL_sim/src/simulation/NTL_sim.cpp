@@ -224,6 +224,10 @@ namespace NTL
 			if (std::abs(z) < 1e-6)
 				throw(std::invalid_argument("Invalid terminal impedances, S-Param simulation"));
 
+		for (auto& z : m_Zs)
+			if (std::abs(z) < 1e-6)
+				throw(std::invalid_argument("Invalid terminal impedances, S-Param simulation"));
+
 		if (!m_sim.m_fmin || !m_sim.m_fmax || !m_sim.m_fstep || m_sim.m_fmin >= m_sim.m_fmax)
 			throw(std::invalid_argument("Invalid frequency sweep in S-Param simulation"));
 
@@ -289,7 +293,7 @@ namespace NTL
 				// [ADDED]: Logging block using the crossing threshold
 				if (log_freq != log_freq_end && f >= *log_freq - 1e-6)
 				{
-					std::cout << "[Load: " << char_labels[i] << " | Frequency: " << f << "]\n";
+					std::cout << "[Source: " << Zs_current << " | Load: " << Zl_current << " | Frequency: " << f << "]\n";
 					std::cout << "\tS11: " << v11 << (mode == mag::dB ? " dB\n" : "\n");
 					std::cout << "\tS12: " << v12 << (mode == mag::dB ? " dB\n" : "\n");
 					std::cout << "\tS21: " << v21 << (mode == mag::dB ? " dB\n" : "\n");

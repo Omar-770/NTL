@@ -13,6 +13,8 @@
 #include "common/file_handler.h"
 #include "common/enums.h"
 #include "common/helpers.h"
+#include "validation.h"
+#include "verification.h"
 
 namespace fh = NTL::fh;
 
@@ -29,6 +31,21 @@ int main(int argc, char* argv[])
 
 		//build the result
 		NTL::NTL ntl = result.ntl;
+
+		//validate the result
+		std::cout << "\nValidating Result...\n";
+		if (validate_result(setup, result))
+			std::cout << "Valid Result...\n";
+		else
+			std::cout << "Invalid Result...\n";
+
+		std::cout << "\n===============================\n";
+
+		//verify the result
+		std::cout << "\nVerifying Result...\n";
+		verify_result(setup, result);
+
+		std::cout << "\n===============================\n";
 
 		//simulate the result
 		double f_max = *std::max_element(setup.freqs.cbegin(), setup.freqs.cend());

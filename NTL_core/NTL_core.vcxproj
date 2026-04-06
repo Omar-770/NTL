@@ -22,7 +22,9 @@
     <ClInclude Include="src\optimisation\NTL_opt.h" />
     <ClInclude Include="src\optimisation\optimiser.h" />
     <ClInclude Include="src\optimisation\TJ_opt.h" />
+    <ClInclude Include="src\validation.h" />
     <ClInclude Include="src\optimisation\WPD_opt.h" />
+    <ClInclude Include="src\verification.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\common\file_handler.cpp" />

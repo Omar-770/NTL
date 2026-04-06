@@ -9,6 +9,7 @@
 #include "models/wpd.h"
 #include "simulation/NTL_sim.h"
 #include "simulation/WPD_sim.h"
+#include "optimisation/WPD_opt.h"
 #include "common/file_handler.h"
 #include "common/enums.h"
 #include "common/helpers.h"
@@ -35,7 +36,7 @@ int main(int argc, char* argv[])
 		auto R = fh::file_to_json(folder_name + "/" + folder_name + "_wpd").at("R");
 		auto setup = fh::file_to_setup<WPD::opt_setup>(folder_name + "/" + folder_name + "_setup");
 
-		int K = 2 * setup.K;
+		int K = 3 * setup.K;
 
 		WPD::WPD wpd(ntl2, ntl3, R);
 
