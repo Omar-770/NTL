@@ -67,7 +67,7 @@ namespace TJ
 
         matrix3x3cd Y = matrix3x3cd::Zero();
 
-        Y(0, 0) = y2(0, 0) + y3(0, 0);
+        Y(0, 0) += y2(0, 0);
         Y(0, 1) += y2(0, 1);
         Y(1, 0) += y2(1, 0);
         Y(1, 1) += y2(1, 1);
