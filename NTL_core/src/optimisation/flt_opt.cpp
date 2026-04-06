@@ -132,6 +132,6 @@ namespace flt
 
 	opt_result opt::optimise(console mode)
 	{
-
+		return opt_result();
 	}
 }
